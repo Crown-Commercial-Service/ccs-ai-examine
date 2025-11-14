@@ -1,2 +1,2 @@
 # ccs-ai-examine
-Examine repo
+EXAMINE: *Ex*pedient *A*nalysis of *M*anagement *I*nformation to *N*otice *E*rrors
