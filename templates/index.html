@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXAMINE</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>EXAMINE</h1>
+    <h2>EXpedient Analysis of Management Information to Notice Errors</h2>
+    <div class="framework-container">
+        <select id="framework">
+            {% for framework in frameworks %}
+            <option>{{ framework }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div id="suppliers-container" class="suppliers-container">
+        {% for supplier in suppliers %}
+        <div class="supplier-box {{ supplier.color }}" data-details='{{ supplier.details | tojson }}' data-name='{{ supplier.name }}'>
+            {{ supplier.name }}
+        </div>
+        {% endfor %}
+    </div>
+    <div id="supplier-details" class="details-box" style="display: none;"></div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

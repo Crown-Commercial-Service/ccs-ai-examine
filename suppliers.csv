@@ -1,0 +1,9 @@
+framework,name,color,buyer_name,contract_value,buyer_spend,reported_spend,suggested_email
+Framework 1,Supplier 1,red,Buyer A,1000000,100000,50000,supplier1@example.com
+Framework 1,Supplier 2,yellow,Buyer B,2000000,200000,150000,supplier2@example.com
+Framework 1,Supplier 3,yellow,Buyer C,3000000,300000,250000,supplier3@example.com
+Framework 1,Supplier 4,green,Buyer D,4000000,400000,350000,supplier4@example.com
+Framework 1,Supplier 5,green,Buyer E,5000000,500000,450000,supplier5@example.com
+Framework 2,Supplier 6,red,Buyer F,6000000,600000,550000,supplier6@example.com
+Framework 2,Supplier 7,yellow,Buyer G,7000000,700000,650000,supplier7@example.com
+Framework 2,Supplier 8,green,Buyer H,8000000,800000,750000,supplier8@example.com
