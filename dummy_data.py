@@ -9,7 +9,7 @@ def generate_dummy_contracts_data(num_rows=30):
     contracts data from Tussell, including specified missing values.
     """
     columns = [
-        'Contracting Authority', 'Supplier', 'Supplier Company Registration Number',
+        'CustomerName', 'SupplierName', 'SupplierCompanyRegistrationNumber',
         'Contract Start Date', 'Contract End Date', 'Contract Duration (Months)',
         'Contract Title', 'Contract Description', 'Total Contract Value - Low (GBP)',
         'Total Contract Value - High (GBP)'
@@ -21,17 +21,18 @@ def generate_dummy_contracts_data(num_rows=30):
 
     df = pd.DataFrame(data)
 
-    # Convert date columns to datetime objects
-    df['Contract Start Date'] = pd.to_datetime('2020-01-01') + pd.to_timedelta(np.arange(num_rows), unit='D')
-    df['Contract End Date'] = df['Contract Start Date'] + pd.to_timedelta(np.arange(num_rows) * 30, unit='D')
+    # Randomly generate start dates and contract lengths
+    df['Contract Start Date'] = pd.to_datetime('2024-01-01') + pd.to_timedelta(np.arange(num_rows), unit='D')
+    df['Contract Duration (Months)'] = np.random.randint(12, 60, num_rows)
+    # Generate end dates to be consistent with start and length
+    df['Contract End Date'] = df['Contract Start Date'] + pd.to_timedelta(df['Contract Duration (Months)']*30, unit='D')
 
     # Convert numeric columns
-    df['Contract Duration (Months)'] = np.random.randint(12, 60, num_rows)
     df['Total Contract Value - Low (GBP)'] = np.random.randint(10000, 1000000, num_rows)
     df['Total Contract Value - High (GBP)'] = df['Total Contract Value - Low (GBP)'] + np.random.randint(5000, 50000, num_rows)
 
     # Ensure 'Supplier Company Registration Number' is unique for joining purposes
-    df['Supplier Company Registration Number'] = [f"REG{1000 + i}" for i in range(num_rows)]
+    df['SupplierCompanyRegistrationNumber'] = [f"REG{1000 + i}" for i in range(num_rows)]
 
     # Introduce 5 rows with one missing value
     for i in range(5):
@@ -57,19 +58,25 @@ def generate_dummy_mi_data(num_rows=30):
         'SupplierName', 'SupplierKey', 'CustomerName', 'FinancialYear',
         'FinancialMonth', 'EvidencedSpend'
     ]
-
-    data = {}
+    # first we make a top half of the table with simulated numbers
+    num_rows_first_half = round(num_rows/2)
+    data_first_half = {}
     for col in columns:
-        data[col] = [f"{col}_{i}" for i in range(num_rows)]
-
-    df = pd.DataFrame(data)
-
+        data_first_half[col] = [f"{col}_{i}" for i in range(num_rows_first_half)]
+    df_first_half = pd.DataFrame(data_first_half)
     # Populate with realistic data types
-    df['FinancialYear'] = np.random.randint(2020, 2024, num_rows)
-    df['FinancialMonth'] = np.random.randint(1, 13, num_rows)
-    df['EvidencedSpend'] = np.random.uniform(100, 5000, num_rows).round(2)
-    df['SupplierKey'] = [f"KEY{100 + i}" for i in range(num_rows)]
+    df_first_half['FinancialYear'] = np.random.randint(2020, 2024, num_rows_first_half)
+    df_first_half['FinancialMonth'] = np.random.randint(1, 13, num_rows_first_half)
+    df_first_half['EvidencedSpend'] = np.random.uniform(100, 5000, num_rows_first_half).round(2)
+    df_first_half['SupplierKey'] = [f"KEY{100 + i}" for i in range(num_rows_first_half)]
 
+    # then we create the second half of the table by moving each entry back by one year, and halving the amount
+    df_second_half = df_first_half.copy()
+    df_second_half['FinancialYear'] = df_second_half['FinancialYear'] - 1
+    df_second_half['EvidencedSpend'] = df_second_half['EvidencedSpend'] / 2
+
+    # combine first and second halves together to get whole dataset, and remove any rows that exceed the row limit
+    df = pd.concat([df_first_half, df_second_half])
 
     # Introduce 5 rows with one missing value
     for i in range(5):
@@ -91,25 +98,25 @@ def generate_dummy_reg_key_pairs(contracts_df, mi_df):
     Generates a dummy DataFrame of SupplierKey and CompanyRegistrationNumber pairs.
     """
     # Get the relevant columns from the input dataframes
-    contracts_keys = contracts_df[['Supplier Company Registration Number']].rename(columns={'Supplier Company Registration Number': 'CompanyRegistrationNumber'})
+    contracts_keys = contracts_df[['SupplierCompanyRegistrationNumber']]
     mi_keys = mi_df[['SupplierKey']]
 
     # Create a combined dataframe to ensure some matching keys
     # We'll take a subset of each to ensure not all keys from one are in the other
     combined = pd.concat([
         contracts_keys.head(20),
-        mi_keys.head(20).rename(columns={'SupplierKey': 'CompanyRegistrationNumber'}) # Just for concat
+        mi_keys.head(20).rename(columns={'SupplierKey': 'SupplierCompanyRegistrationNumber'}) # Just for concat
     ]).dropna().drop_duplicates()
 
     # Create the pairs
     reg_key_pairs = pd.DataFrame({
-        'CompanyRegistrationNumber': combined['CompanyRegistrationNumber'],
+        'SupplierCompanyRegistrationNumber': combined['SupplierCompanyRegistrationNumber'],
         'SupplierKey': [f"KEY{100 + i}" for i in range(len(combined))]
     })
 
     # Add some extra pairs that are not in the other datasets
     extra_pairs = pd.DataFrame({
-        'CompanyRegistrationNumber': [f"REG{2000 + i}" for i in range(10)],
+        'SupplierCompanyRegistrationNumber': [f"REG{2000 + i}" for i in range(10)],
         'SupplierKey': [f"KEY{200 + i}" for i in range(10)]
     })
 
