@@ -27,6 +27,15 @@ contracts = pd.read_sql(contracts_query, conn)
 contracts = contracts.rename(columns={'Supplier Company Registration Number':'SupplierCompanyRegistrationNumber'})
 print("Contracts parsed")
 
+# Create output directory if it doesn't exist
+output_dir = 'processed_data'
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+# Save contracts DataFrame to CSV
+contracts.to_csv(os.path.join(output_dir, 'contracts.csv'), index=False)
+print(f"Saved contracts data to {os.path.join(output_dir, 'contracts.csv')}")
+
 ## STEP 2: GET MI DATA
 # connect to db using creds
 conn_string = '{}://{}:{}@{}:{}/{}?driver={}'.format(
@@ -46,6 +55,10 @@ GCloud14_MI_query = """
 """
 GCloud14_MI = pd.read_sql(GCloud14_MI_query, conn)
 print("MI parsed")
+
+# Save GCloud14_MI DataFrame to CSV
+GCloud14_MI.to_csv(os.path.join(output_dir, 'GCloud14_MI.csv'), index=False)
+print(f"Saved MI data to {os.path.join(output_dir, 'GCloud14_MI.csv')}")
 
 ## STEP 3: GET COMPANY REGISTRATION NUMBER - SUPPLIER KEY PAIRS
 # connect to db using creds
@@ -68,12 +81,6 @@ reg_number_supplier_key = pd.read_sql(reg_number_supplier_key_query, conn)
 reg_number_supplier_key = reg_number_supplier_key.rename(columns={'CompanyRegistrationNumber':'SupplierCompanyRegistrationNumber'})
 print("Company Registration Numbers parsed")
 
-## STEP 4: JOIN SUPPLIERKEY ONTO CONTRACTS
-print(f"Before joining supplier key onto contracts data, there are {len(contracts)} rows of contracts and {len(reg_number_supplier_key)} supplier keys")
-contracts_with_supplierkey = contracts.merge(reg_number_supplier_key, on='SupplierCompanyRegistrationNumber', how='inner')
-print(f"After joining, there are {len(contracts_with_supplierkey)} rows")
-
-## STEP 5: JOIN CONTRACTS ONTO MI
-print(f"Before joining contracts onto MI data, there are {len(GCloud14_MI)} MI entries and {len(contracts_with_supplierkey)} rows of contracts")
-combined = GCloud14_MI.merge(contracts_with_supplierkey, on='SupplierKey', how='left')
-print(f"After joining, there are {len(combined)} rows")
+# Save reg numbers DataFrame to CSV
+reg_number_supplier_key.to_csv(os.path.join(output_dir, 'reg_number_supplier_key.csv'), index=False)
+print(f"Saved reg number data to {os.path.join(output_dir, 'reg_number_supplier_key.csv')}")
