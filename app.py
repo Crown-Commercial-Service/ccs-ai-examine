@@ -12,7 +12,8 @@ def load_suppliers_data():
             supplier['details'] = {
                 'Buyer name': supplier.pop('buyer_name'),
                 'Contract value': supplier.pop('contract_value'),
-                'Buyer spend': supplier.pop('buyer_spend'),
+                'Contract start': supplier.pop('contract_start'),
+                'Contract end': supplier.pop('contract_end'),
                 'Reported spend': supplier.pop('reported_spend'),
                 'Suggested email': supplier.pop('suggested_email')
             }

@@ -14,21 +14,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 const details = JSON.parse(box.dataset.details);
                 const name = box.dataset.name;
                 let detailsHtml = `<h2>${name}</h2>`;
-                const detailOrder = ['Buyer name', 'Contract value', 'Buyer spend', 'Reported spend', 'Suggested email'];
+                const detailOrder = ['Buyer name', 'Contract value', 'Contract start', 'Contract end', 'Reported spend', 'Suggested email'];
 
                 for (const key of detailOrder) {
                     if (details.hasOwnProperty(key)) {
                         const value = details[key];
                         const label = key === 'Suggested email' ? 'Email Address' : key;
                         let formattedValue = value;
-                        if (['Contract value', 'Buyer spend', 'Reported spend'].includes(key)) {
+                        if (['Contract value', 'Reported spend'].includes(key)) {
                             formattedValue = formatCurrency(value);
                         }
                         detailsHtml += `<p><strong>${label}:</strong> ${formattedValue}</p>`;
                     }
                 }
                 const buyerName = details['Buyer name'];
-                const draftEmail = `Dear ${name},\n\nWe are writing to you regarding the contract with ${buyerName}. Please can you check your records for any unreported spend.\n\nBest regards,\nCrown Commercial Service`;
+                const draftEmail = `Dear ${name},\n\nWe are writing to you regarding your agreement with ${buyerName}. Please can you check your records for any unreported spend.\n\nBest regards,\nCrown Commercial Service`;
                 detailsHtml += `<p><strong>Draft Email:</strong></p><textarea readonly style="width: 100%; height: 150px; resize: vertical; background-color: #f5f5f7; border: 1px solid #d2d2d7; border-radius: 12px; padding: 10px; color: #1d1d1f;">${draftEmail}</textarea>`;
                 detailsBox.innerHTML = detailsHtml;
                 detailsBox.style.display = 'block';
