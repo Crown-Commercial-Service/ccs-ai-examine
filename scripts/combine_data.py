@@ -26,9 +26,16 @@ def combine_data(contracts_data, mi_data, regno_key_pairs):
     return contracts_with_mi
 
 if __name__ == "__main__":
+    # # for testing purposes only
+    # combined = combine_data(
+    #     contracts_data="dummy_data/dummy_contracts.csv",
+    #     mi_data="dummy_data/dummy_mi.csv",
+    #     regno_key_pairs="dummy_data/dummy_reg_key_pairs.csv"
+    # )
+    # combined.to_csv("dummy_data/dummy_combined.csv", index=False)
     combined = combine_data(
-        contracts_data="dummy_data/dummy_contracts.csv",
-        mi_data="dummy_data/dummy_mi.csv",
-        regno_key_pairs="dummy_data/dummy_reg_key_pairs.csv"
+        contracts_data="data/contracts.csv",
+        mi_data="data/mi.csv",
+        regno_key_pairs="data/reg_number_supplier_key.csv"
     )
-    combined.to_csv("dummy_data/dummy_combined.csv", index=False)
+    combined.to_csv("data/combined.csv", index=False)

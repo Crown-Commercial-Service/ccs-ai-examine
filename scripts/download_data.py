@@ -28,7 +28,7 @@ contracts = contracts.rename(columns={'Supplier Company Registration Number':'Su
 print("Contracts parsed")
 
 # Create output directory if it doesn't exist
-output_dir = 'processed_data'
+output_dir = 'data'
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
@@ -57,8 +57,8 @@ GCloud14_MI = pd.read_sql(GCloud14_MI_query, conn)
 print("MI parsed")
 
 # Save GCloud14_MI DataFrame to CSV
-GCloud14_MI.to_csv(os.path.join(output_dir, 'GCloud14_MI.csv'), index=False)
-print(f"Saved MI data to {os.path.join(output_dir, 'GCloud14_MI.csv')}")
+GCloud14_MI.to_csv(os.path.join(output_dir, 'mi.csv'), index=False)
+print(f"Saved MI data to {os.path.join(output_dir, 'mi.csv')}")
 
 ## STEP 3: GET COMPANY REGISTRATION NUMBER - SUPPLIER KEY PAIRS
 # connect to db using creds
