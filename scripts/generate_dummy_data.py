@@ -39,7 +39,7 @@ def generate_dummy_mi_data():
         'SupplierName': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1',
                          'Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1',
                          'Supplier 99', 'Supplier 100'],
-        'SupplierKey': [1001, 1002, 1003, 1001, 1001, 1002, 1003, 1001, 1099, 1100],
+        'SupplierKey': [1, 2, 3, 1, 1, 2, 3, 1, 99, 100],
         'CustomerName': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions',
                          'Buyer A', 'BUYER B', 'Buyer C LTD', 'DWP',
                          'Buyer Y', 'Buyer Z'],
@@ -56,7 +56,7 @@ def generate_dummy_reg_key_pairs():
     """
     data = {
         'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1099, 1100],
-        'SupplierKey': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 99', 'Supplier 100']
+        'SupplierKey': [1, 2, 3, 99, 100]
     }
     df = pd.DataFrame(data)
     return df
