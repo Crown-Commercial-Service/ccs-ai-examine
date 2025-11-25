@@ -25,7 +25,7 @@ def combine_data(contracts_data, mi_data, regno_key_pairs):
     contracts = contracts.merge(regno_keys, on="SupplierCompanyRegistrationNumber", how="inner")
     # add a unique reference value called "PairID" to each row of contracts and MI by concatenating the names of the buyer and supplier
     # lowercase the buyer names to avoid case differences throwing off the join
-    contracts['PairID'] = contracts['SupplierKey'].astype(str) + '+' + contracts['CustomerName'].str.lower()
+    contracts['PairID'] = contracts['SupplierKey'].astype(str) + '+' + contracts['Contracting Authority'].str.lower()
     mi['PairID'] = mi['SupplierKey'].astype(str) + '+' + mi['CustomerName'].str.lower()
     # join MI onto contracts
     contracts_with_mi = contracts.merge(mi, on="PairID", how="left")
@@ -35,18 +35,19 @@ def combine_data(contracts_data, mi_data, regno_key_pairs):
 
 if __name__ == "__main__":
 
-    # for testing purposes only
-    combined, unmatched = combine_data(
-        contracts_data="dummy_data/dummy_contracts.csv",
-        mi_data="dummy_data/dummy_mi.csv",
-        regno_key_pairs="dummy_data/dummy_reg_key_pairs.csv"
-    )
-    combined.to_csv("dummy_data/dummy_combined.csv", index=False)
-    unmatched.to_csv("dummy_data/dummy_unmatched_mi.csv", index=False)
-
-    # combined = combine_data(
-    #     contracts_data="data/contracts.csv",
-    #     mi_data="data/mi.csv",
-    #     regno_key_pairs="data/reg_number_supplier_key.csv"
+    # # for testing purposes only
+    # combined, unmatched = combine_data(
+    #     contracts_data="dummy_data/dummy_contracts.csv",
+    #     mi_data="dummy_data/dummy_mi.csv",
+    #     regno_key_pairs="dummy_data/dummy_reg_key_pairs.csv"
     # )
-    # combined.to_csv("data/combined.csv", index=False)
+    # combined.to_csv("dummy_data/dummy_combined.csv", index=False)
+    # unmatched.to_csv("dummy_data/dummy_unmatched_mi.csv", index=False)
+
+    combined, unmatched = combine_data(
+        contracts_data="data/contracts.csv",
+        mi_data="data/mi.csv",
+        regno_key_pairs="data/reg_number_supplier_key.csv"
+    )
+    combined.to_csv("data/combined.csv", index=False)
+    unmatched.to_csv("data/unmatched.csv", index=False)

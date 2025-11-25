@@ -11,8 +11,8 @@ def generate_dummy_contracts_data():
     Row 4 = a contract which is still live and has been running for <1 year
     """
     data = {
-        'CustomerName': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions'],
-        'SupplierName': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1'],
+        'Contracting Authority': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions'],
+        'Supplier': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1'],
         'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1001],
         'Contract Start Date': [pd.to_datetime(i) for i in ['2024-04-01', '2024-04-01', '2024-10-01', '2025-11-01']],
         'Contract End Date': [pd.to_datetime(i) for i in ['2025-04-01', '2027-04-01', '2027-10-01', '2028-04-01']],
