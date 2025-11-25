@@ -20,6 +20,7 @@ conn_string = '{}://{}:{}@{}:{}/{}?driver={}'.format(
 engine = create_engine(conn_string)
 conn = engine.connect()
 # find contract details for companies with a Company Registration Number (because these are the only ones that we can link into MI data)
+# also add lot number
 contracts_query = """
     SELECT [Contracting Authority],Supplier,[Supplier Company Registration Number],[Contract Start Date],[Contract End Date],[Contract Duration (Months)],[Contract Title],[Contract Description],[Total Contract Value - Low (GBP)],[Total Contract Value - High (GBP)] FROM dbo.Tussell_ContractNotices WHERE [Supplier Company Registration Number] IS NOT NULL
 """
@@ -74,6 +75,7 @@ conn_string = '{}://{}:{}@{}:{}/{}?driver={}'.format(
 engine = create_engine(conn_string)
 conn = engine.connect()
 # find supplier Company Registration Number and CCS SupplierKey, to join Tussell to MI data
+# also take supplier status
 reg_number_supplier_key_query = """
     SELECT SupplierKey,CompanyRegistrationNumber FROM sf.Attributes_sf_vw_Suppliers
 """
@@ -84,3 +86,7 @@ print("Company Registration Numbers parsed")
 # Save reg numbers DataFrame to CSV
 reg_number_supplier_key.to_csv(os.path.join(output_dir, 'reg_number_supplier_key.csv'), index=False)
 print(f"Saved reg number data to {os.path.join(output_dir, 'reg_number_supplier_key.csv')}")
+
+## Potential step 4: retrieve organisation abbreviation and address from attributes of organisations SF table, use this for Buyer matching
+
+## Potential step 5: map CustomerName from Tussell into an embedding space 
