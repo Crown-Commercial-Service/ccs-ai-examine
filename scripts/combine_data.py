@@ -14,10 +14,12 @@ def combine_data(contracts_data, mi_data, regno_key_pairs):
         raise Exception(f"Contracts data file {contracts_data} does not exist")
     if os.path.exists(mi_data):
         mi = pd.read_csv(mi_data)
+        mi["SupplierKey"] = mi["SupplierKey"].astype("Int64")
     else:
         raise Exception(f"MI data file {mi_data} does not exist")
     if os.path.exists(regno_key_pairs):
         regno_keys = pd.read_csv(regno_key_pairs)
+        regno_keys["SupplierKey"] = regno_keys["SupplierKey"].astype("Int64")
     else:
         raise Exception(f"Registration number - supplier key data file {regno_key_pairs} does not exist")
     
