@@ -19,10 +19,10 @@ conn_string = '{}://{}:{}@{}:{}/{}?driver={}'.format(
 )
 engine = create_engine(conn_string)
 conn = engine.connect()
-# find contract details for companies with a Company Registration Number (because these are the only ones that we can link into MI data)
+# find GCloud 14 contract details for companies with a Company Registration Number (because these are the only ones that we can link into MI data)
 # also add lot number
 contracts_query = """
-    SELECT [Contracting Authority],Supplier,[Supplier Company Registration Number],[Contract Start Date],[Contract End Date],[Contract Duration (Months)],[Contract Title],[Contract Description],[Total Contract Value - Low (GBP)],[Total Contract Value - High (GBP)] FROM dbo.Tussell_ContractNotices WHERE [Supplier Company Registration Number] IS NOT NULL
+    SELECT [Contracting Authority],Supplier,[Supplier Company Registration Number],[Contract Start Date],[Contract End Date],[Contract Duration (Months)],[Contract Title],[Contract Description],[Total Contract Value - Low (GBP)],[Total Contract Value - High (GBP)] FROM dbo.Tussell_ContractNotices WHERE [Framework Contract] LIKE 'RM1557.14%' AND [Supplier Company Registration Number] IS NOT NULL
 """
 contracts = pd.read_sql(contracts_query, conn)
 contracts = contracts.rename(columns={'Supplier Company Registration Number':'SupplierCompanyRegistrationNumber'})
@@ -55,6 +55,11 @@ GCloud14_MI_query = """
     SELECT SupplierName,SupplierKey,CustomerName,FinancialYear,FinancialMonth,EvidencedSpend FROM mi.MI_RM155714
 """
 GCloud14_MI = pd.read_sql(GCloud14_MI_query, conn)
+GCloud14L4_MI_query = """
+    SELECT SupplierName,SupplierKey,CustomerName,FinancialYear,FinancialMonth,EvidencedSpend FROM mi.MI_RM155714L4
+"""
+GCloud14L4_MI = pd.read_sql(GCloud14L4_MI_query, conn)
+GCloud14_MI = pd.concat([GCloud14_MI, GCloud14L4_MI], axis=1)
 print("MI parsed")
 
 # Save GCloud14_MI DataFrame to CSV
