@@ -18,7 +18,7 @@ def generate_dummy_contracts_data():
         'Contract End Date': [pd.to_datetime(i) for i in ['2025-04-01', '2027-04-01', '2027-10-01', '2028-04-01']],
         'Contract Duration (Months)': [12, 36, 36, 36],
         'Contract Title': [f"Contract {i+1}" for i in range(4)],
-        'Contract Description': [f"Description for contract {i+1}" for i in range(4)],
+        'Contract Description': [f"Description for contract {i+1}, with commas that need to be handled when parsing" for i in range(4)],
         'Total Contract Value - Low (GBP)': [1e6, 2.5e6, 5e6, 7.5e6]
     }
     df = pd.DataFrame(data)
@@ -34,18 +34,19 @@ def generate_dummy_mi_data():
     Row 7 = an MI entry for the third contract where the buyer name has been contracted
     Row 8 = an MI entry for the fourth contract where the buyer name acronym has been used
     Rows 9-10: MI entries for contracts which aren't in the dummy contracts dataset
+    Rows 11: an MI entry for a contract which isn't in the dummy contracts dataset, and which is missing its SupplierKey
     """
     data = {
         'SupplierName': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1',
                          'Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1',
-                         'Supplier 99', 'Supplier 100'],
-        'SupplierKey': [1, 2, 3, 1, 1, 2, 3, 1, 99, 100],
+                         'Supplier 99', 'Supplier 100', 'Supplier 101'],
+        'SupplierKey': [1, 2, 3, 1, 1, 2, 3, 1, 99, 100, np.nan],
         'CustomerName': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions',
                          'Buyer A', 'BUYER B', 'Buyer C LTD', 'DWP',
-                         'Buyer Y', 'Buyer Z'],
-        'FinancialYear': [2024 for i in range(10)],
-        'FinancialMonth': range(0,10,1),
-        'EvidencedSpend': [1e5 for i in range(10)]
+                         'Buyer Y', 'Buyer Z', 'Buyer Z'],
+        'FinancialYear': [2024 for i in range(11)],
+        'FinancialMonth': range(0,11,1),
+        'EvidencedSpend': [1e5 for i in range(11)]
     }
     df = pd.DataFrame(data)
     return df
