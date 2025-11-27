@@ -59,7 +59,7 @@ GCloud14L4_MI_query = """
     SELECT SupplierName,SupplierKey,CustomerName,FinancialYear,FinancialMonth,EvidencedSpend FROM mi.MI_RM155714L4
 """
 GCloud14L4_MI = pd.read_sql(GCloud14L4_MI_query, conn)
-GCloud14_MI = pd.concat([GCloud14_MI, GCloud14L4_MI], axis=1)
+GCloud14_MI = pd.concat([GCloud14_MI, GCloud14L4_MI], axis=0)
 print("MI parsed")
 
 # Save GCloud14_MI DataFrame to CSV
