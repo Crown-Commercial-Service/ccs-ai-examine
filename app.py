@@ -15,7 +15,7 @@ def load_suppliers_data():
                 'Contract start': supplier.pop('contract_start'),
                 'Contract end': supplier.pop('contract_end'),
                 'Reported spend': supplier.pop('reported_spend'),
-                'Suggested email': supplier.pop('suggested_email')
+
             }
         suppliers_data[framework] = suppliers_list
     return suppliers_data
