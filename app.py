@@ -6,6 +6,8 @@ app = Flask(__name__)
 
 def load_suppliers_data():
     df = pd.read_csv('suppliers.csv')
+    if 'color' in df.columns:
+        df = df.drop(columns=['color'])
     suppliers_data = {}
     for framework, group in df.groupby('framework'):
         suppliers_list = group.to_dict('records')
