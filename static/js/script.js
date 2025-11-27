@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const frameworkSelect = document.getElementById('framework');
-    const suppliersContainer = document.getElementById('suppliers-container');
+    const suppliersContainer = document = document.getElementById('suppliers-container');
     const detailsBox = document.getElementById('supplier-details');
 
     function formatCurrency(value) {
@@ -14,12 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const details = JSON.parse(box.dataset.details);
                 const name = box.dataset.name;
                 let detailsHtml = `<h2>${name}</h2>`;
-                const detailOrder = ['Buyer name', 'Contract value', 'Contract start', 'Contract end', 'Reported spend', 'Suggested email'];
+                const detailOrder = ['Buyer name', 'Contract value', 'Contract start', 'Contract end', 'Reported spend', 'Months Run So Far'];
 
                 for (const key of detailOrder) {
                     if (details.hasOwnProperty(key)) {
                         const value = details[key];
-                        const label = key === 'Suggested email' ? 'Email Address' : key;
+                        const label = key;
                         let formattedValue = value;
                         if (['Contract value', 'Reported spend'].includes(key)) {
                             formattedValue = formatCurrency(value);
