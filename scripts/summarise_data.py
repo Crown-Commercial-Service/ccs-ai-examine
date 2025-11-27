@@ -1,6 +1,7 @@
 import pandas as pd
 
 # read in data and make sure that column types are correct
+contracts = pd.read_csv("data/contracts.csv", low_memory=False)
 matched = pd.read_csv("data/combined.csv", low_memory=False)
 unmatched = pd.read_csv("data/unmatched.csv", low_memory=False)
 reported_spend_per_contract = matched.groupby('PairID').agg({
@@ -24,12 +25,22 @@ reported_spend_per_contract['Expired'] = reported_spend_per_contract['Contract E
 expired_contracts = reported_spend_per_contract[reported_spend_per_contract['Expired']==True].copy()
 
 # summary stats
-print(f"There are {len(reported_spend_per_contract)} contracts in total")
-print(f"There are {len(unmatched)} unmatched MI entries in total, featuring {len(unmatched['SupplierName'].unique())} suppliers and {len(unmatched['CustomerName'].unique())} buyers")
-print(f"There are {len(reported_spend_per_contract[reported_spend_per_contract['EvidencedSpend']>0.0])} contracts with spend reported")
-
-# flags
+total_contracts = len(contracts)
+total_contracts_with_key = len(reported_spend_per_contract)
+unmatched_mi_entries = len(unmatched)
+unique_unmatched_suppliers = len(unmatched['SupplierName'].unique())
+unique_unmatched_buyers = len(unmatched['CustomerName'].unique())
+total_contracts_with_spend = len(reported_spend_per_contract[reported_spend_per_contract['EvidencedSpend']>0.0])
 red_filter = expired_contracts['EvidencedSpend']==0.0
-print(f"There are {len(expired_contracts[red_filter])} out of {len(expired_contracts)} expired contracts that have no reported spend")
+no_spend_expired = len(expired_contracts[red_filter])
 amber_filter = (reported_spend_per_contract['Expired']==False) & (reported_spend_per_contract['Total Months Run So Far']>3) & (reported_spend_per_contract['EvidencedSpend']==0.0)
-print(f"There are {len(reported_spend_per_contract[amber_filter])} out of {len(reported_spend_per_contract)} current contracts that have been running for >3 months and have no reported spend")
+no_spend_3month_run = len(reported_spend_per_contract[amber_filter])
+summary_stats = {
+    "Summary Statistic": ["Total Contracts", "Total Contracts with Supplier Key", "Unmatched MI Entries", "Unique Unmatched Suppliers", "Unique Unmatched Buyers",
+                          "Total Contracts with Spend", "Total Contracts No Spend and Expired", "Total Contracts No Spend and Running >3 Months"],
+    "Value": [total_contracts, total_contracts_with_key, unmatched_mi_entries, unique_unmatched_suppliers, unique_unmatched_buyers,
+              total_contracts_with_spend, no_spend_expired, no_spend_3month_run]
+}
+summary_stats_df = pd.DataFrame(summary_stats)
+print(summary_stats_df)
+summary_stats_df.to_csv("data/summary_stats.csv", index=False)
