@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 box.classList.add('red');
             } else if (monthsRun > threshold) {
                 box.classList.add('yellow');
+            } else {
+                box.classList.add('green');
             }
         });
     }
