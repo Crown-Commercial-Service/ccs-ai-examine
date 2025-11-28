@@ -1,5 +1,5 @@
 from typing import List
-from langchain.schema import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage
 
 def match_string_with_langchain(input_string: str, list_of_strings: List[str], model) -> str:
     """
@@ -13,7 +13,9 @@ def match_string_with_langchain(input_string: str, list_of_strings: List[str], m
     Returns:
         The model's response content.
     """
-    system_prompt = f"Match the input string to one of these : {', '.join(list_of_strings)}"
+    system_prompt = f"""
+    Match the input string to one of these : {list_of_strings}. If you can't find a match, return 'None'.
+    """
     
     messages = [
         SystemMessage(content=system_prompt),

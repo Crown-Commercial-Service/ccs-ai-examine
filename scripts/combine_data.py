@@ -48,32 +48,45 @@ def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
         authority_names = contracts['Contracting Authority'].unique().tolist()
         unique_unmatched_customers = unmatched_mi['CustomerName'].unique()
         name_map = {name: match_string_with_langchain(name, authority_names, model) for name in unique_unmatched_customers}
-        unmatched_mi['llm_suggested_match'] = unmatched_mi['CustomerName'].map(name_map)
+        unmatched_mi['AIMatchedName'] = unmatched_mi['CustomerName'].map(name_map)
+        unmatched_mi['PairID'] = unmatched_mi['SupplierKey'].astype(str) + '+' + unmatched_mi['AIMatchedName'].str.lower()
+        # join unmatched MI onto contracts that weren't matched the first time
+        matched_contracts_pair_ids = contracts['PairID'].isin(contracts_with_mi['PairID'])
+        unmatched_contracts = contracts[~matched_contracts_pair_ids]
+        contracts_with_mi_AI = unmatched_contracts.merge(unmatched_mi, on="PairID", how="left")
+        contracts_with_mi = pd.concat([contracts_with_mi, contracts_with_mi_AI])
+        matched_pair_ids = mi['PairID'].isin(contracts_with_mi['PairID'])
+        unmatched_mi = mi[~matched_pair_ids]
 
     return (contracts_with_mi, unmatched_mi)
 
 if __name__ == "__main__":
 
-    # # for testing purposes only
-    # combined, unmatched = combine_data(
-    #     contracts_data="dummy_data/dummy_contracts.csv",
-    #     mi_data="dummy_data/dummy_mi.csv",
-    #     regno_key_pairs="dummy_data/dummy_reg_key_pairs.csv"
-    # )
-    # combined.to_csv("dummy_data/dummy_combined.csv", index=False)
-    # unmatched.to_csv("dummy_data/dummy_unmatched_mi.csv", index=False)
     load_dotenv()
 
     model = AzureChatOpenAI(
-        openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+        openai_api_key=os.getenv("AZURE_OPENAI_KEY"),
         azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
+        openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION")
     )
 
+    # # run this block for live data
+    # combined, unmatched = combine_data(
+    #     contracts_data="data/contracts.csv",
+    #     mi_data="data/mi.csv",
+    #     regno_key_pairs="data/reg_number_supplier_key.csv",
+    #     model=model
+    # )
+    # combined.to_csv("data/combined.csv", index=False)
+    # unmatched.to_csv("data/unmatched.csv", index=False)
+
+    # run this block for testing
     combined, unmatched = combine_data(
-        contracts_data="data/contracts.csv",
-        mi_data="data/mi.csv",
-        regno_key_pairs="data/reg_number_supplier_key.csv",
+        contracts_data="dummy_data/dummy_contracts.csv",
+        mi_data="dummy_data/dummy_mi.csv",
+        regno_key_pairs="dummy_data/dummy_reg_key_pairs.csv",
         model=model
     )
-    combined.to_csv("data/combined.csv", index=False)
-    unmatched.to_csv("data/unmatched.csv", index=False)
+    combined.to_csv("dummy_data/dummy_combined.csv", index=False)
+    unmatched.to_csv("dummy_data/dummy_unmatched_mi.csv", index=False)
