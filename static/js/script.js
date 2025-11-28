@@ -2,9 +2,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const frameworkSelect = document.getElementById('framework');
     const suppliersContainer = document.getElementById('suppliers-container');
     const detailsBox = document.getElementById('supplier-details');
+    const thresholdSlider = document.getElementById('threshold');
+    const thresholdValue = document.getElementById('threshold-value');
 
     function formatCurrency(value) {
         return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(value);
+    }
+
+    function updateSupplierColors() {
+        const threshold = parseInt(thresholdSlider.value, 10);
+        thresholdValue.textContent = threshold;
+        const supplierBoxes = document.querySelectorAll('.supplier-box');
+        supplierBoxes.forEach(box => {
+            const details = JSON.parse(box.dataset.details);
+            const reportedSpend = details['Reported spend'];
+            const contractEnd = new Date(details['Contract end']);
+            const monthsRun = details['Months Run So Far'];
+            const today = new Date();
+
+            box.classList.remove('red', 'yellow', 'green');
+
+            if (reportedSpend > 0) {
+                box.classList.add('green');
+            } else if (contractEnd < today) {
+                box.classList.add('red');
+            } else if (monthsRun > threshold) {
+                box.classList.add('yellow');
+            } else {
+                box.classList.add('green');
+            }
+        });
     }
 
     function attachEventListenersToSupplierBoxes() {
@@ -14,12 +41,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const details = JSON.parse(box.dataset.details);
                 const name = box.dataset.name;
                 let detailsHtml = `<h2>${name}</h2>`;
-                const detailOrder = ['Buyer name', 'Contract value', 'Contract start', 'Contract end', 'Reported spend', 'Suggested email'];
+                const detailOrder = ['Buyer name', 'Contract value', 'Contract start', 'Contract end', 'Reported spend', 'Months Run So Far'];
 
                 for (const key of detailOrder) {
                     if (details.hasOwnProperty(key)) {
                         const value = details[key];
-                        const label = key === 'Suggested email' ? 'Email Address' : key;
+                        const label = key;
                         let formattedValue = value;
                         if (['Contract value', 'Reported spend'].includes(key)) {
                             formattedValue = formatCurrency(value);
@@ -45,15 +72,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 suppliersContainer.innerHTML = '';
                 suppliers.forEach(supplier => {
                     const supplierBox = document.createElement('div');
-                    supplierBox.className = `supplier-box ${supplier.color}`;
+                    supplierBox.className = 'supplier-box';
                     supplierBox.dataset.details = JSON.stringify(supplier.details);
                     supplierBox.dataset.name = supplier.name;
                     supplierBox.textContent = supplier.name;
                     suppliersContainer.appendChild(supplierBox);
                 });
                 attachEventListenersToSupplierBoxes();
+                updateSupplierColors();
             });
     });
 
+    thresholdSlider.addEventListener('input', updateSupplierColors);
+
     attachEventListenersToSupplierBoxes();
+    updateSupplierColors();
 });

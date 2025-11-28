@@ -40,6 +40,14 @@ select {
     cursor: pointer;
 }
 
+.slider-container {
+    margin-bottom: 30px;
+}
+
+input[type="range"] {
+    width: 300px;
+}
+
 .suppliers-container {
     display: flex;
     justify-content: center;
@@ -61,6 +69,7 @@ select {
     border: none;
     border-radius: 20px;
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    background-color: #cccccc;
 }
 
 .supplier-box:hover {

@@ -1,21 +1,31 @@
 import pandas as pd
 from flask import Flask, render_template, jsonify
+from datetime import datetime
 
 app = Flask(__name__)
 
 def load_suppliers_data():
     df = pd.read_csv('suppliers.csv')
+    if 'color' in df.columns:
+        df = df.drop(columns=['color'])
     suppliers_data = {}
     for framework, group in df.groupby('framework'):
         suppliers_list = group.to_dict('records')
         for supplier in suppliers_list:
+            contract_start_date = datetime.strptime(supplier['contract_start'], '%Y-%m-%d')
+            contract_end_date = datetime.strptime(supplier['contract_end'], '%Y-%m-%d')
+            today = datetime.now()
+            if contract_end_date < today:
+                months_ran = (contract_end_date.year - contract_start_date.year) * 12 + (contract_end_date.month - contract_start_date.month)
+            else:
+                months_ran = (today.year - contract_start_date.year) * 12 + (today.month - contract_start_date.month)
             supplier['details'] = {
                 'Buyer name': supplier.pop('buyer_name'),
                 'Contract value': supplier.pop('contract_value'),
                 'Contract start': supplier.pop('contract_start'),
                 'Contract end': supplier.pop('contract_end'),
                 'Reported spend': supplier.pop('reported_spend'),
-                'Suggested email': supplier.pop('suggested_email')
+                'Months Run So Far': months_ran,
             }
         suppliers_data[framework] = suppliers_list
     return suppliers_data

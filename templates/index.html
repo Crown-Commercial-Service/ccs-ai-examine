@@ -16,9 +16,13 @@
             {% endfor %}
         </select>
     </div>
+    <div class="slider-container">
+        <label for="threshold">Months Run Threshold: <span id="threshold-value">6</span></label>
+        <input type="range" id="threshold" name="threshold" min="0" max="12" value="6">
+    </div>
     <div id="suppliers-container" class="suppliers-container">
         {% for supplier in suppliers %}
-        <div class="supplier-box {{ supplier.color }}" data-details='{{ supplier.details | tojson }}' data-name='{{ supplier.name }}'>
+        <div class="supplier-box" data-details='{{ supplier.details | tojson }}' data-name='{{ supplier.name }}'>
             {{ supplier.name }}
         </div>
         {% endfor %}
