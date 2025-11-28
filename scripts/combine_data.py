@@ -1,12 +1,21 @@
 import pandas as pd
 import os
+import sys
+from dotenv import load_dotenv
+from langchain_openai import AzureChatOpenAI
 
-def combine_data(contracts_data, mi_data, regno_key_pairs):
+# Add the parent directory to the path so that we can import from 'utils'
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from utils import match_string_with_langchain
+
+
+def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
     """Combines contracts data with MI data
     Args:
         contracts_data: path to the contracts data CSV file
         mi_data: path to the MI data CSV file
         regno_key_pairs: path to the registration number - supplier key CSV file
+        model: optional LangChain model for fuzzy matching
     """
     if os.path.exists(contracts_data):
         contracts = pd.read_csv(contracts_data)
@@ -31,8 +40,16 @@ def combine_data(contracts_data, mi_data, regno_key_pairs):
     mi['PairID'] = mi['SupplierKey'].astype(str) + '+' + mi['CustomerName'].str.lower()
     # join MI onto contracts
     contracts_with_mi = contracts.merge(mi, on="PairID", how="left")
-    unmatched_pair_ids = mi['PairID'].isin(contracts_with_mi['PairID'])
-    unmatched_mi = mi[~unmatched_pair_ids]
+    matched_pair_ids = mi['PairID'].isin(contracts_with_mi['PairID'])
+    unmatched_mi = mi[~matched_pair_ids]
+
+    if model and not unmatched_mi.empty:
+        unmatched_mi = unmatched_mi.copy()
+        authority_names = contracts['Contracting Authority'].unique().tolist()
+        unique_unmatched_customers = unmatched_mi['CustomerName'].unique()
+        name_map = {name: match_string_with_langchain(name, authority_names, model) for name in unique_unmatched_customers}
+        unmatched_mi['llm_suggested_match'] = unmatched_mi['CustomerName'].map(name_map)
+
     return (contracts_with_mi, unmatched_mi)
 
 if __name__ == "__main__":
@@ -45,11 +62,18 @@ if __name__ == "__main__":
     # )
     # combined.to_csv("dummy_data/dummy_combined.csv", index=False)
     # unmatched.to_csv("dummy_data/dummy_unmatched_mi.csv", index=False)
+    load_dotenv()
+
+    model = AzureChatOpenAI(
+        openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+        azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
+    )
 
     combined, unmatched = combine_data(
         contracts_data="data/contracts.csv",
         mi_data="data/mi.csv",
-        regno_key_pairs="data/reg_number_supplier_key.csv"
+        regno_key_pairs="data/reg_number_supplier_key.csv",
+        model=model
     )
     combined.to_csv("data/combined.csv", index=False)
     unmatched.to_csv("data/unmatched.csv", index=False)
