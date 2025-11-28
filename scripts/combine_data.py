@@ -51,9 +51,17 @@ def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
         unmatched_mi['AIMatchedName'] = unmatched_mi['CustomerName'].map(name_map)
         unmatched_mi['PairID'] = unmatched_mi['SupplierKey'].astype(str) + '+' + unmatched_mi['AIMatchedName'].str.lower()
         # join unmatched MI onto contracts that weren't matched the first time
-        matched_contracts_pair_ids = contracts['PairID'].isin(contracts_with_mi['PairID'])
-        unmatched_contracts = contracts[~matched_contracts_pair_ids]
+        # A left join was performed, so we can identify unmatched contracts by finding rows where MI data is null
+        unmatched_contracts = contracts_with_mi[contracts_with_mi['CustomerName'].isnull()].copy()
+        # drop the empty MI columns from this dataframe before the new join
+        mi_cols = mi.columns.drop('PairID') # get mi columns to drop, except the join key
+        unmatched_contracts.drop(columns=mi_cols, inplace=True)
+        
         contracts_with_mi_AI = unmatched_contracts.merge(unmatched_mi, on="PairID", how="left")
+        
+        # filter out the original unmatched rows from contracts_with_mi
+        contracts_with_mi = contracts_with_mi.dropna(subset=['CustomerName'])
+        
         contracts_with_mi = pd.concat([contracts_with_mi, contracts_with_mi_AI])
         matched_pair_ids = mi['PairID'].isin(contracts_with_mi['PairID'])
         unmatched_mi = mi[~matched_pair_ids]
