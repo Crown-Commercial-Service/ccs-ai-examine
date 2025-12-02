@@ -21,6 +21,7 @@ def match_string_with_langchain(input_string: str, list_of_strings: List[str], m
         SystemMessage(content=system_prompt),
         HumanMessage(content=input_string),
     ]
-
+    print(f"Using LLM to find match for {input_string}")
     response = model.invoke(messages)
+    print(f"Response = {response.content}")
     return response.content

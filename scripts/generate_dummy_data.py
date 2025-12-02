@@ -9,17 +9,18 @@ def generate_dummy_contracts_data():
     Row 1 = a contract which has expired
     Rows 2-3 = contracts which are still live and have been runnning for >1 year
     Row 4 = a contract which is still live and has been running for <1 year
+    Row 5 = a contract which has no corresponding MI, and should be retained in the end data
     """
     data = {
-        'Contracting Authority': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions'],
-        'Supplier': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1'],
-        'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1001],
-        'Contract Start Date': [pd.to_datetime(i) for i in ['2024-04-01', '2024-04-01', '2024-10-01', '2025-11-01']],
-        'Contract End Date': [pd.to_datetime(i) for i in ['2025-04-01', '2027-04-01', '2027-10-01', '2028-04-01']],
-        'Contract Duration (Months)': [12, 36, 36, 36],
-        'Contract Title': [f"Contract {i+1}" for i in range(4)],
-        'Contract Description': [f"Description for contract {i+1}, with commas that need to be handled when parsing" for i in range(4)],
-        'Total Contract Value - Low (GBP)': [1e6, 2.5e6, 5e6, 7.5e6]
+        'Contracting Authority': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions', 'Buyer no MI'],
+        'Supplier': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1', 'Supplier no MI'],
+        'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1001, 5678],
+        'Contract Start Date': [pd.to_datetime(i) for i in ['2024-04-01', '2024-04-01', '2024-10-01', '2025-11-01', '2025-12-01']],
+        'Contract End Date': [pd.to_datetime(i) for i in ['2025-04-01', '2027-04-01', '2027-10-01', '2028-04-01', '2027-05-01']],
+        'Contract Duration (Months)': [12, 36, 36, 36, 24],
+        'Contract Title': [f"Contract {i+1}" for i in range(5)],
+        'Contract Description': [f"Description for contract {i+1}, with commas that need to be handled when parsing" for i in range(5)],
+        'Total Contract Value - Low (GBP)': [1e6, 2.5e6, 5e6, 7.5e6, 10e6]
     }
     df = pd.DataFrame(data)
     df['Total Contract Value - High (GBP)'] = df['Total Contract Value - Low (GBP)'] + 1e6
