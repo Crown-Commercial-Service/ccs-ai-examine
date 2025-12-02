@@ -35,19 +35,20 @@ def generate_dummy_mi_data():
     Row 7 = an MI entry for the third contract where the buyer name has been contracted
     Row 8 = an MI entry for the fourth contract where the buyer name acronym has been used
     Rows 9-10: MI entries for contracts which aren't in the dummy contracts dataset
-    Rows 11: an MI entry for a contract which isn't in the dummy contracts dataset, and which is missing its SupplierKey
+    Row 11: an MI entry for a contract which isn't in the dummy contracts dataset, and which is missing its SupplierKey
+    Row 12: an MI entry for a contract where both the buyer and supplier are in the contracts dataset under consistent names, but there isn't a contract between them in the contracts dataset
     """
     data = {
         'SupplierName': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1',
                          'Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1',
-                         'Supplier 99', 'Supplier 100', 'Supplier 101'],
-        'SupplierKey': [1, 2, 3, 1, 1, 2, 3, 1, 99, 100, np.nan],
+                         'Supplier 99', 'Supplier 100', 'Supplier 101', 'Supplier 1'],
+        'SupplierKey': [1, 2, 3, 1, 1, 2, 3, 1, 99, 100, np.nan, 1],
         'CustomerName': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions',
                          'Buyer A', 'BUYER B', 'Buyer C LTD', 'DWP',
-                         'Buyer Y', 'Buyer Z', 'Buyer Z'],
-        'FinancialYear': [2024 for i in range(11)],
-        'FinancialMonth': range(0,11,1),
-        'EvidencedSpend': [1e5 for i in range(11)]
+                         'Buyer Y', 'Buyer Z', 'Buyer Z', 'Buyer C Limited'],
+        'FinancialYear': [2024 for i in range(12)],
+        'FinancialMonth': range(0,12,1),
+        'EvidencedSpend': [1e5 for i in range(12)]
     }
     df = pd.DataFrame(data)
     return df
