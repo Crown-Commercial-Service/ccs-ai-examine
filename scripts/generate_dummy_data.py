@@ -57,8 +57,8 @@ def generate_dummy_reg_key_pairs():
     Generates a dummy DataFrame of SupplierKey and CompanyRegistrationNumber pairs.
     """
     data = {
-        'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1099, 1100],
-        'SupplierKey': [1, 2, 3, 99, 100]
+        'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1099, 1100, 5678],
+        'SupplierKey': [1, 2, 3, 99, 100, 4678]
     }
     df = pd.DataFrame(data)
     return df
