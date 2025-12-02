@@ -41,13 +41,19 @@ def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
     # join MI onto contracts
     contracts_with_mi = contracts.merge(mi, on="PairID", how="left")
     matched_pair_ids = mi['PairID'].isin(contracts_with_mi['PairID'])
-    unmatched_mi = mi[~matched_pair_ids]
+    # find the unmatched MI, which may be because
+    # Situation 1. the buyer name in the MI matches to one in the contract data, and there is simply no contract with a supplier
+    # Situation 2. the buyer name in the MI doesn't match to one in the contract data, and we need an LLM to find a match
+    unmatched_mi_all = mi[~matched_pair_ids]
+    # ignore Situation 1
+    buyer_names_from_contracts = contracts['Contracting Authority'].unique().tolist()
+    mi_buyer_names_to_ignore = unmatched_mi_all[unmatched_mi_all['CustomerName'].isin(buyer_names_from_contracts)]['CustomerName']
+    # focus on Situation 2
+    unmatched_mi = unmatched_mi_all[~unmatched_mi_all['CustomerName'].isin(mi_buyer_names_to_ignore)].copy()
 
     if model and not unmatched_mi.empty:
-        unmatched_mi = unmatched_mi.copy()
-        authority_names = contracts['Contracting Authority'].unique().tolist()
         unique_unmatched_customers = unmatched_mi['CustomerName'].unique()
-        name_map = {name: match_string_with_langchain(name, authority_names, model) for name in unique_unmatched_customers}
+        name_map = {name: match_string_with_langchain(name, buyer_names_from_contracts, model) for name in unique_unmatched_customers}
         unmatched_mi['AIMatchedName'] = unmatched_mi['CustomerName'].map(name_map)
         unmatched_mi['PairID'] = unmatched_mi['SupplierKey'].astype(str) + '+' + unmatched_mi['AIMatchedName'].str.lower()
         # join unmatched MI onto contracts
