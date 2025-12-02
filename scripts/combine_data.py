@@ -44,6 +44,7 @@ def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
     # find the unmatched MI, which may be because
     # Situation 1. the buyer name in the MI matches to one in the contract data, and there is simply no contract with a supplier
     # Situation 2. the buyer name in the MI doesn't match to one in the contract data, and we need an LLM to find a match
+    # we can safely ignore Situation 1: if the name matches, we would already have caught it in the initial join, and all the LLM will return is its input
     unmatched_mi_all = mi[~matched_pair_ids]
     # ignore Situation 1
     buyer_names_from_contracts = contracts['Contracting Authority'].unique().tolist()
