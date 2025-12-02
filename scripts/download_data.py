@@ -33,6 +33,14 @@ output_dir = 'data'
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
+# before writing to file, we need to deal with an issue with the supplier company registration numbers
+# these are always 8 characters long, and most are numeric, but some can have a two-letter prefix followed by 6 numbers
+# some start with zeros, but the contracts df doesn't always keep these leading zeros
+# this will break the join with any table that does retain them, like the regno_keys table
+# we can't just convert everything to integers before joining, because some tiny fraction of suppliers may have the two-letter prefix
+# therefore we need to find reg. nos. in contracts df which have <8 characters in their supplier company registration numbers, and add the zero(es) back in
+contracts['SupplierCompanyRegistrationNumber'] = [i.zfill(8) for i in contracts['SupplierCompanyRegistrationNumber']]
+
 # Save contracts DataFrame to CSV
 contracts.to_csv(os.path.join(output_dir, 'contracts.csv'), index=False)
 print(f"Saved contracts data to {os.path.join(output_dir, 'contracts.csv')}")
@@ -87,11 +95,6 @@ reg_number_supplier_key_query = """
 reg_number_supplier_key = pd.read_sql(reg_number_supplier_key_query, conn)
 reg_number_supplier_key = reg_number_supplier_key.rename(columns={'CompanyRegistrationNumber':'SupplierCompanyRegistrationNumber'})
 print("Company Registration Numbers parsed")
-
 # Save reg numbers DataFrame to CSV
 reg_number_supplier_key.to_csv(os.path.join(output_dir, 'reg_number_supplier_key.csv'), index=False)
 print(f"Saved reg number data to {os.path.join(output_dir, 'reg_number_supplier_key.csv')}")
-
-## Potential step 4: retrieve organisation abbreviation and address from attributes of organisations SF table, use this for Buyer matching
-
-## Potential step 5: map CustomerName from Tussell into an embedding space 
