@@ -9,17 +9,18 @@ def generate_dummy_contracts_data():
     Row 1 = a contract which has expired
     Rows 2-3 = contracts which are still live and have been runnning for >1 year
     Row 4 = a contract which is still live and has been running for <1 year
+    Row 5 = a contract which has no corresponding MI, and should be retained in the end data
     """
     data = {
-        'Contracting Authority': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions'],
-        'Supplier': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1'],
-        'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1001],
-        'Contract Start Date': [pd.to_datetime(i) for i in ['2024-04-01', '2024-04-01', '2024-10-01', '2025-11-01']],
-        'Contract End Date': [pd.to_datetime(i) for i in ['2025-04-01', '2027-04-01', '2027-10-01', '2028-04-01']],
-        'Contract Duration (Months)': [12, 36, 36, 36],
-        'Contract Title': [f"Contract {i+1}" for i in range(4)],
-        'Contract Description': [f"Description for contract {i+1}, with commas that need to be handled when parsing" for i in range(4)],
-        'Total Contract Value - Low (GBP)': [1e6, 2.5e6, 5e6, 7.5e6]
+        'Contracting Authority': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions', 'Buyer no MI'],
+        'Supplier': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1', 'Supplier no MI'],
+        'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1001, 5678],
+        'Contract Start Date': [pd.to_datetime(i) for i in ['2024-04-01', '2024-04-01', '2024-10-01', '2025-11-01', '2025-12-01']],
+        'Contract End Date': [pd.to_datetime(i) for i in ['2025-04-01', '2027-04-01', '2027-10-01', '2028-04-01', '2027-05-01']],
+        'Contract Duration (Months)': [12, 36, 36, 36, 24],
+        'Contract Title': [f"Contract {i+1}" for i in range(5)],
+        'Contract Description': [f"Description for contract {i+1}, with commas that need to be handled when parsing" for i in range(5)],
+        'Total Contract Value - Low (GBP)': [1e6, 2.5e6, 5e6, 7.5e6, 10e6]
     }
     df = pd.DataFrame(data)
     df['Total Contract Value - High (GBP)'] = df['Total Contract Value - Low (GBP)'] + 1e6
@@ -34,19 +35,20 @@ def generate_dummy_mi_data():
     Row 7 = an MI entry for the third contract where the buyer name has been contracted
     Row 8 = an MI entry for the fourth contract where the buyer name acronym has been used
     Rows 9-10: MI entries for contracts which aren't in the dummy contracts dataset
-    Rows 11: an MI entry for a contract which isn't in the dummy contracts dataset, and which is missing its SupplierKey
+    Row 11: an MI entry for a contract which isn't in the dummy contracts dataset, and which is missing its SupplierKey
+    Row 12: an MI entry for a contract where both the buyer and supplier are in the contracts dataset under consistent names, but there isn't a contract between them in the contracts dataset
     """
     data = {
         'SupplierName': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1',
                          'Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1',
-                         'Supplier 99', 'Supplier 100', 'Supplier 101'],
-        'SupplierKey': [1, 2, 3, 1, 1, 2, 3, 1, 99, 100, np.nan],
+                         'Supplier 99', 'Supplier 100', 'Supplier 101', 'Supplier 1'],
+        'SupplierKey': [1, 2, 3, 1, 1, 2, 3, 1, 99, 100, np.nan, 1],
         'CustomerName': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions',
                          'Buyer A', 'BUYER B', 'Buyer C LTD', 'DWP',
-                         'Buyer Y', 'Buyer Z', 'Buyer Z'],
-        'FinancialYear': [2024 for i in range(11)],
-        'FinancialMonth': range(0,11,1),
-        'EvidencedSpend': [1e5 for i in range(11)]
+                         'Buyer Y', 'Buyer Z', 'Buyer Z', 'Buyer C Limited'],
+        'FinancialYear': [2024 for i in range(12)],
+        'FinancialMonth': range(0,12,1),
+        'EvidencedSpend': [1e5 for i in range(12)]
     }
     df = pd.DataFrame(data)
     return df
@@ -56,8 +58,8 @@ def generate_dummy_reg_key_pairs():
     Generates a dummy DataFrame of SupplierKey and CompanyRegistrationNumber pairs.
     """
     data = {
-        'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1099, 1100],
-        'SupplierKey': [1, 2, 3, 99, 100]
+        'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1099, 1100, 5678],
+        'SupplierKey': [1, 2, 3, 99, 100, 4678]
     }
     df = pd.DataFrame(data)
     return df
