@@ -34,3 +34,10 @@ To install the SQL drivers, run the `install_drivers.sh` script:
 ```
 bash install_drivers.sh
 ```
+
+### Verification
+
+To verify that you have installed the repo correctly, run the tests:
+```
+python -m pytest
+```
