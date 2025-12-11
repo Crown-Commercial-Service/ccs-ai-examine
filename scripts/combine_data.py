@@ -77,22 +77,22 @@ if __name__ == "__main__":
         openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION")
     )
 
-    # # run this block for live data
-    # combined, unmatched = combine_data(
-    #     contracts_data="data/contracts.csv",
-    #     mi_data="data/mi.csv",
-    #     regno_key_pairs="data/reg_number_supplier_key.csv",
-    #     model=model
-    # )
-    # combined.to_csv("data/combined.csv", index=False)
-    # unmatched.to_csv("data/unmatched.csv", index=False)
-
-    # run this block for testing
+    # run this block for live data
     combined, unmatched = combine_data(
-        contracts_data="dummy_data/dummy_contracts.csv",
-        mi_data="dummy_data/dummy_mi.csv",
-        regno_key_pairs="dummy_data/dummy_reg_key_pairs.csv",
+        contracts_data="data/contracts.csv",
+        mi_data="data/mi.csv",
+        regno_key_pairs="data/reg_number_supplier_key.csv",
         model=model
     )
-    combined.to_csv("dummy_data/dummy_combined.csv", index=False)
-    unmatched.to_csv("dummy_data/dummy_unmatched_mi.csv", index=False)
+    combined.to_csv("data/combined.csv", index=False)
+    unmatched.to_csv("data/unmatched.csv", index=False)
+
+    # # run this block for testing
+    # combined, unmatched = combine_data(
+    #     contracts_data="dummy_data/dummy_contracts.csv",
+    #     mi_data="dummy_data/dummy_mi.csv",
+    #     regno_key_pairs="dummy_data/dummy_reg_key_pairs.csv",
+    #     model=model
+    # )
+    # combined.to_csv("dummy_data/dummy_combined.csv", index=False)
+    # unmatched.to_csv("dummy_data/dummy_unmatched_mi.csv", index=False)
