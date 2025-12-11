@@ -3,7 +3,7 @@ import numpy as np
 import random
 import os
 
-def generate_dummy_contracts_data():
+def generate_dummy_contracts_data() -> pd.DataFrame:
     """
     Generates a dummy pandas DataFrame mimicking the structure of the contracts data from Tussell.
     Row 1 = a contract which has expired

@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils import match_string_with_langchain
 
 
-def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
+def combine_data(contracts_data:str, mi_data:str, regno_key_pairs:str, model:AzureChatOpenAI=None) -> tuple:
     """Combines contracts data with MI data
     Args:
         contracts_data: path to the contracts data CSV file
