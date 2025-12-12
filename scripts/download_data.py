@@ -22,7 +22,7 @@ conn = engine.connect()
 # find GCloud 10-14 contract details for companies with a Company Registration Number (because these are the only ones that we can link into MI data)
 # also add lot number
 contracts_query = """
-    SELECT [Contracting Authority],Supplier,[Supplier Company Registration Number],[Contract Start Date],[Contract End Date],[Contract Duration (Months)],[Contract Title],[Contract Description],[Total Contract Value - Low (GBP)],[Total Contract Value - High (GBP)] FROM dbo.Tussell_ContractNotices
+    SELECT [Contracting Authority],Supplier,[Supplier Company Registration Number],[Date Published],[Contract Start Date],[Contract End Date],[Contract Duration (Months)],[Contract Title],[Contract Description],[Total Contract Value - Low (GBP)],[Total Contract Value - High (GBP)],[Framework Contract] FROM dbo.Tussell_ContractNotices
     WHERE (
         [Framework Contract] LIKE 'RM1557.10%'
         OR [Framework Contract] LIKE 'RM1557.11%'
