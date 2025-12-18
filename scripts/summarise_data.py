@@ -14,13 +14,19 @@ matched = matched.rename(columns={
 unmatched = pd.read_csv("data/unmatched.csv", low_memory=False)
 # where a buyer-supplier pair has >1 contract, take the most recent contract
 reported_spend_per_pair = matched.sort_values('Contract Start Date', ascending=False).groupby('PairID').agg({
+    'awarded': 'first',
     'Contracting Authority': 'first',
     'Supplier': 'first',
     'Award Value': 'sum',
+    'EvidencedSpend': 'sum',
     'Contract Start Date': 'first',
     'Contract End Date': 'first',
     'Contract Duration (Months)': 'first',
-    'EvidencedSpend': 'sum'
+    'contract_title': 'first',
+    'contract_description': 'first',
+    'framework_title': 'first',
+    'source': 'first',
+    'latest_employees': 'first'
 }).reset_index(drop=True)
 reported_spend_per_pair['Contract Start Date'] = pd.to_datetime(reported_spend_per_pair['Contract Start Date'])
 reported_spend_per_pair['Contract End Date'] = pd.to_datetime(reported_spend_per_pair['Contract End Date'])
