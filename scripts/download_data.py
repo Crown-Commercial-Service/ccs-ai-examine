@@ -24,17 +24,21 @@ conn = engine.connect()
 # (because these are the only ones that we can link into MI data)
 contracts_query = """
     SELECT
-        t1.buyer,t1.awarded,
+        t1.awarded,
+        t1.buyer,
+        t1.suppliers,
+        t1.award_value,
         t1.contract_start,
         t1.contract_end,
         t1.contract_months,
+        t1.contract_title,
         t1.contract_description,
-        t1.award_value,
         t1.framework_title,
-        t1.suppliers, 
+        t1.source,
         t1.supplier_ids,
         t2.id AS supplier_id,
-        t2.company_number
+        t2.company_number,
+        t2.latest_employees
     FROM dbo.Tussell_ContractAwards_API t1
     CROSS APPLY OPENJSON(t1.supplier_ids) AS j
     INNER JOIN dbo.Tussell_Suppliers_API t2 
