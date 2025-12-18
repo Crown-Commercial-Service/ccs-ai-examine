@@ -19,35 +19,42 @@ conn_string = '{}://{}:{}@{}:{}/{}?driver={}'.format(
 )
 engine = create_engine(conn_string)
 conn = engine.connect()
-# find GCloud 10-14 contract details for companies with a Company Registration Number (because these are the only ones that we can link into MI data)
-# also add lot number
+# find GCloud 10-14 contract details
+# note that we join the Company Registration Number from a separate table, and only keep contract entries where a match is found
+# (because these are the only ones that we can link into MI data)
 contracts_query = """
-    SELECT [Contracting Authority],Supplier,[Supplier Company Registration Number],[Date Published],[Contract Start Date],[Contract End Date],[Contract Duration (Months)],[Contract Title],[Contract Description],[Total Contract Value - Low (GBP)],[Total Contract Value - High (GBP)],[Framework Contract] FROM dbo.Tussell_ContractNotices
+    SELECT
+        t1.buyer,t1.awarded,
+        t1.contract_start,
+        t1.contract_end,
+        t1.contract_months,
+        t1.contract_description,
+        t1.award_value,
+        t1.framework_title,
+        t1.suppliers, 
+        t1.supplier_ids,
+        t2.id AS supplier_id,
+        t2.company_number
+    FROM dbo.Tussell_ContractAwards_API t1
+    CROSS APPLY OPENJSON(t1.supplier_ids) AS j
+    INNER JOIN dbo.Tussell_Suppliers_API t2 
+        ON CAST(j.value AS INT) = t2.id
     WHERE (
-        [Framework Contract] LIKE 'RM1557.10%'
-        OR [Framework Contract] LIKE 'RM1557.11%'
-        OR [Framework Contract] LIKE 'RM1557.12%'
-        OR [Framework Contract] LIKE 'RM1557.13%'
-        OR [Framework Contract] LIKE 'RM1557.14%'
-    )
-    AND [Supplier Company Registration Number] IS NOT NULL
+            t1.framework_title LIKE 'RM1557.10%'
+            OR t1.framework_title LIKE 'RM1557.11%'
+            OR t1.framework_title LIKE 'RM1557.12%'
+            OR t1.framework_title LIKE 'RM1557.13%'
+            OR t1.framework_title LIKE 'RM1557.14%'
+        )
 """
 contracts = pd.read_sql(contracts_query, conn)
-contracts = contracts.rename(columns={'Supplier Company Registration Number':'SupplierCompanyRegistrationNumber'})
+contracts = contracts.rename(columns={'company number':'SupplierCompanyRegistrationNumber'})
 print("Contracts parsed")
 
 # Create output directory if it doesn't exist
 output_dir = 'data'
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
-
-# before writing to file, we need to deal with an issue with the supplier company registration numbers
-# these are always 8 characters long, and most are numeric, but some can have a two-letter prefix followed by 6 numbers
-# some start with zeros, but the contracts df doesn't always keep these leading zeros
-# this will break the join with any table that does retain them, like the regno_keys table
-# we can't just convert everything to integers before joining, because some tiny fraction of suppliers may have the two-letter prefix
-# therefore we need to find reg. nos. in contracts df which have <8 characters in their supplier company registration numbers, and add the zero(es) back in
-contracts['SupplierCompanyRegistrationNumber'] = [i.zfill(8) for i in contracts['SupplierCompanyRegistrationNumber']]
 
 # Save contracts DataFrame to CSV
 contracts.to_csv(os.path.join(output_dir, 'contracts.csv'), index=False)
