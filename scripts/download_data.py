@@ -52,7 +52,7 @@ contracts_query = """
         )
 """
 contracts = pd.read_sql(contracts_query, conn)
-contracts = contracts.rename(columns={'company number':'SupplierCompanyRegistrationNumber'})
+contracts = contracts.rename(columns={'company_number':'SupplierCompanyRegistrationNumber'})
 print("Contracts parsed")
 
 # Create output directory if it doesn't exist

@@ -36,7 +36,7 @@ def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
     contracts = contracts.merge(regno_keys, on="SupplierCompanyRegistrationNumber", how="inner")
     # add a unique reference value called "PairID" to each row of contracts and MI by concatenating the names of the buyer and supplier
     # lowercase the buyer names to avoid case differences throwing off the join
-    contracts['PairID'] = contracts['SupplierKey'].astype(str) + '+' + contracts['Contracting Authority'].str.lower()
+    contracts['PairID'] = contracts['SupplierKey'].astype(str) + '+' + contracts['buyer'].str.lower()
     mi['PairID'] = mi['SupplierKey'].astype(str) + '+' + mi['CustomerName'].str.lower()
     # join MI onto contracts
     contracts_with_mi = contracts.merge(mi, on="PairID", how="left")
@@ -47,7 +47,7 @@ def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
     # we can safely ignore Situation 1: if the name matches, we would already have caught it in the initial join, and all the LLM will return is its input
     unmatched_mi_all = mi[~matched_pair_ids]
     # ignore Situation 1
-    buyer_names_from_contracts = contracts['Contracting Authority'].unique().tolist()
+    buyer_names_from_contracts = contracts['buyer'].unique().tolist()
     mi_buyer_names_to_ignore = unmatched_mi_all[unmatched_mi_all['CustomerName'].isin(buyer_names_from_contracts)]['CustomerName']
     # focus on Situation 2
     unmatched_mi = unmatched_mi_all[~unmatched_mi_all['CustomerName'].isin(mi_buyer_names_to_ignore)].copy()

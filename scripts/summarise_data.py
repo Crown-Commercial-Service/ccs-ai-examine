@@ -3,12 +3,20 @@ import pandas as pd
 # read in data and make sure that column types are correct
 contracts = pd.read_csv("data/contracts.csv", low_memory=False)
 matched = pd.read_csv("data/combined.csv", low_memory=False)
+matched = matched.rename(columns={
+    'buyer': 'Contracting Authority',
+    'suppliers': 'Supplier',
+    'award_value': 'Award Value',
+    'contract_start': 'Contract Start Date',
+    'contract_end': 'Contract End Date',
+    'contract_months': 'Contract Duration (Months)',
+})
 unmatched = pd.read_csv("data/unmatched.csv", low_memory=False)
 # where a buyer-supplier pair has >1 contract, take the most recent contract
 reported_spend_per_pair = matched.sort_values('Contract Start Date', ascending=False).groupby('PairID').agg({
     'Contracting Authority': 'first',
     'Supplier': 'first',
-    'Total Contract Value - High (GBP)': 'sum',
+    'Award Value': 'sum',
     'Contract Start Date': 'first',
     'Contract End Date': 'first',
     'Contract Duration (Months)': 'first',
