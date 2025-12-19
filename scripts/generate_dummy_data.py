@@ -12,18 +12,23 @@ def generate_dummy_contracts_data():
     Row 5 = a contract which has no corresponding MI, and should be retained in the end data
     """
     data = {
-        'Contracting Authority': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions', 'Buyer no MI'],
-        'Supplier': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1', 'Supplier no MI'],
+        'awarded': [pd.to_datetime(i) for i in ['2024-03-01', '2024-03-01', '2024-09-01', '2025-10-01', '2025-11-01']],
+        'buyer': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions', 'Buyer no MI'],
+        'suppliers': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1', 'Supplier no MI'],
+        'award_value': [1e6, 2.5e6, 5e6, 7.5e6, 10e6],
+        'contract_start': [pd.to_datetime(i) for i in ['2024-04-01', '2024-04-01', '2024-10-01', '2025-11-01', '2025-12-01']],
+        'contract_end': [pd.to_datetime(i) for i in ['2025-04-01', '2027-04-01', '2027-10-01', '2028-04-01', '2027-05-01']],
+        'contract_months': [12, 36, 36, 36, 24],
+        'contract_title': [f"Contract {i+1}" for i in range(5)],
+        'contract_description': [f"Description for contract {i+1}, with commas that need to be handled when parsing" for i in range(5)],
+        'framework_title': ['RM1557.10 G-Cloud 10', 'RM1557.11 G-Cloud 11', 'RM1557.12 G-Cloud 12', 'RM1557.13 G-Cloud 13', 'RM1557.14 G-Cloud 14'],
+        'source': ['Tussell', 'Tussell', 'Tussell', 'Tussell', 'Tussell'],
+        'supplier_ids': ['[123]', '[456]', '[789]', '[123]', '[999]'],
+        'supplier_id': [123, 456, 789, 123, 999],
         'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1001, 5678],
-        'Contract Start Date': [pd.to_datetime(i) for i in ['2024-04-01', '2024-04-01', '2024-10-01', '2025-11-01', '2025-12-01']],
-        'Contract End Date': [pd.to_datetime(i) for i in ['2025-04-01', '2027-04-01', '2027-10-01', '2028-04-01', '2027-05-01']],
-        'Contract Duration (Months)': [12, 36, 36, 36, 24],
-        'Contract Title': [f"Contract {i+1}" for i in range(5)],
-        'Contract Description': [f"Description for contract {i+1}, with commas that need to be handled when parsing" for i in range(5)],
-        'Total Contract Value - Low (GBP)': [1e6, 2.5e6, 5e6, 7.5e6, 10e6]
+        'latest_employees': [50, 200, 1000, 50, 10]
     }
     df = pd.DataFrame(data)
-    df['Total Contract Value - High (GBP)'] = df['Total Contract Value - Low (GBP)'] + 1e6
     return df
 
 def generate_dummy_mi_data():

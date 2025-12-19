@@ -1,5 +1,6 @@
-Contracting Authority,Supplier,SupplierCompanyRegistrationNumber,Contract Start Date,Contract End Date,Contract Duration (Months),Contract Title,Contract Description,Total Contract Value - Low (GBP),Total Contract Value - High (GBP)
-Buyer A,Supplier 1,1001,2024-04-01,2025-04-01,12,Contract 1,"Description for contract 1, with commas that need to be handled when parsing",1000000.0,2000000.0
-Buyer B,Supplier 2,1002,2024-04-01,2027-04-01,36,Contract 2,"Description for contract 2, with commas that need to be handled when parsing",2500000.0,3500000.0
-Buyer C Limited,Supplier 3,1003,2024-10-01,2027-10-01,36,Contract 3,"Description for contract 3, with commas that need to be handled when parsing",5000000.0,6000000.0
-Department for Work and Pensions,Supplier 1,1001,2025-11-01,2028-04-01,36,Contract 4,"Description for contract 4, with commas that need to be handled when parsing",7500000.0,8500000.0
+awarded,buyer,suppliers,award_value,contract_start,contract_end,contract_months,contract_title,contract_description,framework_title,source,supplier_ids,supplier_id,SupplierCompanyRegistrationNumber,latest_employees
+2024-03-01,Buyer A,Supplier 1,1000000.0,2024-04-01,2025-04-01,12,Contract 1,"Description for contract 1, with commas that need to be handled when parsing",RM1557.10 G-Cloud 10,Tussell,[123],123,1001,50
+2024-03-01,Buyer B,Supplier 2,2500000.0,2024-04-01,2027-04-01,36,Contract 2,"Description for contract 2, with commas that need to be handled when parsing",RM1557.11 G-Cloud 11,Tussell,[456],456,1002,200
+2024-09-01,Buyer C Limited,Supplier 3,5000000.0,2024-10-01,2027-10-01,36,Contract 3,"Description for contract 3, with commas that need to be handled when parsing",RM1557.12 G-Cloud 12,Tussell,[789],789,1003,1000
+2025-10-01,Department for Work and Pensions,Supplier 1,7500000.0,2025-11-01,2028-04-01,36,Contract 4,"Description for contract 4, with commas that need to be handled when parsing",RM1557.13 G-Cloud 13,Tussell,[123],123,1001,50
+2025-11-01,Buyer no MI,Supplier no MI,10000000.0,2025-12-01,2027-05-01,24,Contract 5,"Description for contract 5, with commas that need to be handled when parsing",RM1557.14 G-Cloud 14,Tussell,[999],999,5678,10
