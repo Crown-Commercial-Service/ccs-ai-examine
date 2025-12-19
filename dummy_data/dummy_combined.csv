@@ -1,0 +1,36 @@
+CustomerName_x,SupplierName_x,SupplierCompanyRegistrationNumber,Contract Start Date,Contract End Date,Contract Duration (Months),Contract Title,Contract Description,Total Contract Value - Low (GBP),Total Contract Value - High (GBP),SupplierKey,SupplierName_y,CustomerName_y,FinancialYear,FinancialMonth,EvidencedSpend
+CustomerName_0,SupplierName_0,REG1000,2024-01-01,2028-08-07,56.0,Contract Title_0,Contract Description_0,692225,725305.0,KEY100,,CustomerName_0,2020.0,8.0,4309.79
+CustomerName_0,SupplierName_0,REG1000,2024-01-01,2028-08-07,56.0,Contract Title_0,Contract Description_0,692225,725305.0,KEY100,,CustomerName_0,2019.0,8.0,2154.895
+CustomerName_1,SupplierName_1,REG1001,2024-01-02,2028-07-09,55.0,Contract Title_1,Contract Description_1,751340,763327.0,KEY101,SupplierName_1,CustomerName_1,2022.0,9.0,2923.71
+CustomerName_1,SupplierName_1,REG1001,2024-01-02,2028-07-09,55.0,Contract Title_1,Contract Description_1,751340,763327.0,KEY101,SupplierName_1,CustomerName_1,2021.0,9.0,1461.855
+CustomerName_2,SupplierName_2,REG1002,2024-01-03,2026-07-21,31.0,Contract Title_2,Contract Description_2,166562,174274.0,KEY102,SupplierName_2,CustomerName_2,2021.0,5.0,3127.79
+CustomerName_2,SupplierName_2,REG1002,2024-01-03,2026-07-21,31.0,Contract Title_2,Contract Description_2,166562,174274.0,KEY102,SupplierName_2,CustomerName_2,2020.0,5.0,1563.895
+CustomerName_3,SupplierName_3,REG1003,2024-01-04,2025-11-24,23.0,Contract Title_3,Contract Description_3,465602,512985.0,KEY103,SupplierName_3,CustomerName_3,2023.0,4.0,1511.32
+CustomerName_3,SupplierName_3,REG1003,2024-01-04,2025-11-24,23.0,Contract Title_3,Contract Description_3,465602,512985.0,KEY103,SupplierName_3,CustomerName_3,2022.0,4.0,755.66
+CustomerName_4,SupplierName_4,REG1004,2024-01-05,2028-11-09,59.0,Contract Title_4,Contract Description_4,191524,229397.0,KEY104,,CustomerName_4,2022.0,,3249.49
+CustomerName_4,SupplierName_4,REG1004,2024-01-05,2028-11-09,59.0,Contract Title_4,Contract Description_4,191524,229397.0,KEY104,,CustomerName_4,2021.0,,1624.745
+CustomerName_5,SupplierName_5,REG1005,2024-01-06,2028-07-13,55.0,Contract Title_5,Contract Description_5,883401,908170.0,KEY105,SupplierName_5,CustomerName_5,2021.0,1.0,1774.06
+CustomerName_5,SupplierName_5,REG1005,2024-01-06,2028-07-13,55.0,Contract Title_5,Contract Description_5,883401,908170.0,KEY105,SupplierName_5,CustomerName_5,2020.0,1.0,887.03
+CustomerName_6,SupplierName_6,REG1006,2024-01-07,2028-11-11,59.0,Contract Title_6,Contract Description_6,891260,919524.0,KEY106,SupplierName_6,CustomerName_6,2021.0,5.0,1070.49
+CustomerName_6,SupplierName_6,REG1006,2024-01-07,2028-11-11,59.0,Contract Title_6,Contract Description_6,891260,919524.0,KEY106,SupplierName_6,CustomerName_6,2020.0,5.0,535.245
+CustomerName_7,SupplierName_7,REG1007,2024-01-08,2028-10-13,58.0,Contract Title_7,Contract Description_7,747840,756760.0,KEY107,SupplierName_7,CustomerName_7,2020.0,9.0,2659.21
+CustomerName_7,SupplierName_7,REG1007,2024-01-08,2028-10-13,58.0,Contract Title_7,Contract Description_7,747840,756760.0,KEY107,SupplierName_7,CustomerName_7,2019.0,9.0,1329.605
+CustomerName_8,SupplierName_8,REG1008,2024-01-09,2028-04-17,52.0,Contract Title_8,Contract Description_8,608507,652066.0,KEY108,SupplierName_8,CustomerName_8,2020.0,10.0,4920.34
+CustomerName_8,SupplierName_8,REG1008,2024-01-09,2028-04-17,52.0,Contract Title_8,Contract Description_8,608507,652066.0,KEY108,SupplierName_8,CustomerName_8,2019.0,10.0,2460.17
+CustomerName_9,SupplierName_9,REG1009,2024-01-10,2028-09-15,57.0,Contract Title_9,Contract Description_9,855506,903359.0,KEY109,SupplierName_9,CustomerName_9,2022.0,2.0,3958.51
+CustomerName_9,SupplierName_9,REG1009,2024-01-10,2028-09-15,57.0,Contract Title_9,Contract Description_9,855506,903359.0,KEY109,SupplierName_9,CustomerName_9,2021.0,2.0,1979.255
+CustomerName_10,SupplierName_10,REG1010,2024-01-11,2027-09-22,45.0,Contract Title_10,Contract Description_10,238078,248471.0,KEY110,SupplierName_10,CustomerName_10,2020.0,10.0,3790.18
+CustomerName_10,SupplierName_10,REG1010,2024-01-11,2027-09-22,45.0,Contract Title_10,Contract Description_10,238078,248471.0,KEY110,SupplierName_10,CustomerName_10,2019.0,10.0,1895.09
+CustomerName_11,SupplierName_11,REG1011,2024-01-12,2025-11-02,22.0,Contract Title_11,Contract Description_11,687505,712432.0,KEY111,SupplierName_11,CustomerName_11,2021.0,4.0,796.75
+CustomerName_11,SupplierName_11,REG1011,2024-01-12,2025-11-02,22.0,Contract Title_11,Contract Description_11,687505,712432.0,KEY111,SupplierName_11,CustomerName_11,2020.0,4.0,398.375
+CustomerName_12,SupplierName_12,REG1012,2024-01-13,2025-10-04,21.0,Contract Title_12,Contract Description_12,395161,,KEY112,SupplierName_12,CustomerName_12,2022.0,5.0,4054.35
+CustomerName_12,SupplierName_12,REG1012,2024-01-13,2025-10-04,21.0,Contract Title_12,Contract Description_12,395161,,KEY112,SupplierName_12,CustomerName_12,2021.0,5.0,2027.175
+CustomerName_13,SupplierName_13,REG1013,2024-01-14,,,,Contract Description_13,458449,486561.0,KEY113,SupplierName_13,CustomerName_13,2020.0,3.0,2290.35
+CustomerName_13,SupplierName_13,REG1013,2024-01-14,,,,Contract Description_13,458449,486561.0,KEY113,SupplierName_13,CustomerName_13,2019.0,3.0,1145.175
+CustomerName_14,SupplierName_14,REG1014,2024-01-15,2026-02-03,25.0,Contract Title_14,Contract Description_14,358521,386602.0,KEY114,SupplierName_14,CustomerName_14,2020.0,11.0,3881.17
+CustomerName_14,SupplierName_14,REG1014,2024-01-15,2026-02-03,25.0,Contract Title_14,Contract Description_14,358521,386602.0,KEY114,SupplierName_14,CustomerName_14,2019.0,11.0,1940.585
+,SupplierName_15,REG1015,2024-01-16,2028-03-25,51.0,Contract Title_15,Contract Description_15,96594,108664.0,KEY115,,,,,
+CustomerName_16,SupplierName_16,REG1016,2024-01-17,2027-12-27,48.0,Contract Title_16,Contract Description_16,863667,907178.0,KEY116,,,,,
+CustomerName_17,SupplierName_17,REG1017,2024-01-18,2026-02-06,25.0,Contract Title_17,Contract Description_17,697735,729843.0,KEY117,,,,,
+CustomerName_18,SupplierName_18,REG1018,2024-01-19,2025-06-12,17.0,Contract Title_18,Contract Description_18,197453,220490.0,KEY118,,,,,
+CustomerName_19,SupplierName_19,REG1019,2024-01-20,2028-06-27,54.0,Contract Title_19,Contract Description_19,694389,708604.0,KEY119,,,,,

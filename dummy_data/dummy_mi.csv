@@ -1,0 +1,12 @@
+SupplierName,SupplierKey,CustomerName,FinancialYear,FinancialMonth,EvidencedSpend
+Supplier 1,1.0,Buyer A,2024,0,100000.0
+Supplier 2,2.0,Buyer B,2024,1,100000.0
+Supplier 3,3.0,Buyer C Limited,2024,2,100000.0
+Supplier 1,1.0,Department for Work and Pensions,2024,3,100000.0
+Supplier 1,1.0,Buyer A,2024,4,100000.0
+Supplier 2,2.0,BUYER B,2024,5,100000.0
+Supplier 3,3.0,Buyer C LTD,2024,6,100000.0
+Supplier 1,1.0,DWP,2024,7,100000.0
+Supplier 99,99.0,Buyer Y,2024,8,100000.0
+Supplier 100,100.0,Buyer Z,2024,9,100000.0
+Supplier 101,,Buyer Z,2024,10,100000.0
