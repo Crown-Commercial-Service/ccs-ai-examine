@@ -34,3 +34,89 @@ To install the SQL drivers, run the `install_drivers.sh` script:
 ```
 bash install_drivers.sh
 ```
+
+# CCS-AI-EXAMINE
+
+EXAMINE (**Ex**pedient **A**nalysis of **M**anagement **I**nformation to **N**otice **E**rrors) is a data science–driven project that helps CCS identify potential errors in supplier-reported Management Information (MI), particularly under-reporting or missing spend.
+
+A core component of this repository focuses on **entity name matching** (buyer–supplier matching), evaluated using a benchmark dataset and tracked with **MLflow**.
+
+---
+
+## Repository Structure
+
+```
+CCS-AI-EXAMINE/
+├── data/
+│   └── ccs_combined_buyer_supplier_benchmark.csv
+├── evaluation/
+│   ├── evaluate_buyer_matching_mlflow.py
+│   └── mock_langchain_model.py
+├── prompts/
+│   ├── buyer_match_v1.txt
+│   ├── buyer_match_v2.txt
+│   ├── buyer_match_v3.txt
+│   └── buyer_match_v4.txt
+├── tests/
+│   ├── test_distractors.py
+│   └── test_mock_and_utils.py
+├── mlruns/
+├── mlflow_outputs/
+├── utils.py
+├── utils_old.py
+├── requirements.txt
+└── README.md
+```
+
+---
+
+## Key Concepts
+
+- **Benchmark Dataset**: Ground-truth buyer and supplier name pairs covering typos, acronyms, semantic equivalents, parent–subsidiary cases, and negative controls.
+- **Prompt-driven Evaluation**: Prompts are read from files, not hard-coded.
+- **Mock LLM**: Used while Azure OpenAI access is pending.
+- **MLflow Tracking**: Captures accuracy, breakdowns and artifacts per prompt version.
+
+---
+
+## Running the Evaluation
+
+```bash
+python -m evaluation.evaluate_buyer_matching_mlflow
+```
+
+---
+
+## Viewing Results in MLflow
+
+```bash
+python -m mlflow ui --backend-store-uri file:./mlruns --port 5000
+```
+
+Open: http://127.0.0.1:5000
+
+---
+
+## Testing
+
+Run unit tests:
+
+```bash
+python -m pytest -q
+```
+
+---
+
+## Azure Readiness
+
+The evaluation pipeline is designed so that once Azure OpenAI access is available, the mock LLM can be replaced with a real Azure client with minimal changes.
+
+---
+
+## Status
+
+- Benchmark dataset completed and reviewed
+- MLflow integrated
+- Prompt evaluation running
+- Unit tests implemented
+- Azure integration pending
