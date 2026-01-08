@@ -21,3 +21,4 @@ langchain-openai
 mlflow
 uvicorn
 pytest
+PyYAML

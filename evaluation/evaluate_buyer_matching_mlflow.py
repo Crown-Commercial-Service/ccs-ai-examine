@@ -5,8 +5,9 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, List
 import random
-
 import pandas as pd
+import hashlib
+import yaml
 import mlflow
 mlflow.set_tracking_uri("file:./mlruns")
 
@@ -76,6 +77,8 @@ def build_candidate_list(
     ) -> List[str]:
     """
     Build a realistic candidate list for evaluation.
+    - Positive rows: ground truth + N distractors
+    - Negative rows: only distractors (no forced ground truth)
     """
     rng = random.Random(seed + hash(input_name) % 1_000_000)
 
@@ -95,14 +98,86 @@ def build_candidate_list(
     rng.shuffle(cands)
     return cands
 
+def sha256_file(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+def sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+def load_yaml_config(yaml_path: str) -> dict:
+    p = Path(yaml_path)
+    if not p.exists():
+        return {}
+    with open(p, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+    
+def get_run_description(cfg: dict, prompt_file: str) -> str | None:
+    """
+    Your YAML has a structure like:
+      prompts:
+        buyer_match_v1.txt:
+          description: "..."
+    """
+    prompts = cfg.get("prompts", {}) if isinstance(cfg, dict) else {}
+    entry = prompts.get(prompt_file, {})
+    if isinstance(entry, dict):
+        desc = entry.get("description")
+        if isinstance(desc, str) and desc.strip():
+            return desc.strip()
+    return None
+
+def get_experiment_name(cfg: dict, default_name: str) -> str:
+    mlflow_cfg = cfg.get("mlflow", {}) if isinstance(cfg, dict) else {}
+    exp = mlflow_cfg.get("experiment_name")
+    if isinstance(exp, str) and exp.strip():
+        return exp.strip()
+    return default_name
+
+def should_rerun_prompt(
+    experiment_name: str,
+    prompt_file: str,
+    prompt_sha: str,
+    dataset_sha: str,
+    num_distractors: int,
+    seed: int,
+    similarity_threshold: float,
+    ) -> bool:
+    """
+    Returns True if we should rerun, False if an identical run already exists.
+    """
+    exp = mlflow.get_experiment_by_name(experiment_name)
+    if exp is None:
+        return True  # no experiment yet
+
+    filter_str = (
+        f"params.prompt_file = '{prompt_file}' AND "
+        f"params.prompt_sha = '{prompt_sha}' AND "
+        f"params.dataset_sha = '{dataset_sha}' AND "
+        f"params.num_distractors = '{num_distractors}' AND "
+        f"params.seed = '{seed}' AND "
+        f"params.similarity_threshold = '{similarity_threshold}'"
+    )
+    runs = mlflow.search_runs(
+        experiment_ids=[exp.experiment_id],
+        filter_string=filter_str,
+        max_results=1,
+    )
+    return runs.empty  # rerun only if no matching run found
 
 def evaluate_prompt_on_benchmark(
     df: pd.DataFrame,
     prompt_path: str,
-    experiment_name: str = "EXAMINE_name_matching_updated_scripts",
+    experiment_name: str,
     similarity_threshold: float = 0.85,
     num_distractors: int = 20,
     seed: int = 42,
+    run_name: str | None = None,
+    prompt_sha: str = "",
+    dataset_sha: str = "",
     ) -> Dict[str, Any]:
 
     """
@@ -120,14 +195,18 @@ def evaluate_prompt_on_benchmark(
         if str(x).strip().lower() not in {"n/a", "na", "none", ""}
     })
 
-    run_name = f"{Path(prompt_path).stem}_mock_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    final_run_name = run_name or Path(prompt_path).stem
 
     mlflow.set_experiment(experiment_name)
 
-    with mlflow.start_run(run_name=run_name):
-        # Params
+    with mlflow.start_run(run_name=final_run_name):
+        # Params (include hashes so skip logic works)
+        mlflow.log_param("run_description", final_run_name)
         mlflow.log_param("prompt_file", Path(prompt_path).name)
         mlflow.log_param("prompt_path", prompt_path)
+        mlflow.log_param("prompt_sha", prompt_sha)
+        mlflow.log_param("dataset_sha", dataset_sha)
+
         mlflow.log_param("llm_type", "MockChatModelWithCandidates")
         mlflow.log_param("candidate_pool_size", len(all_candidates))
         mlflow.log_param("similarity_threshold", similarity_threshold)
@@ -205,7 +284,7 @@ def evaluate_prompt_on_benchmark(
             mlflow.log_metric(f"accuracy_entity_{safe}", float(v))
 
         # Artifacts
-        artifacts_dir = Path("mlflow_outputs") / run_name
+        artifacts_dir = Path("mlflow_outputs") / final_run_name
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
         pred_path = artifacts_dir / "predictions.csv"
@@ -213,31 +292,34 @@ def evaluate_prompt_on_benchmark(
 
         summary = {
             "prompt_file": Path(prompt_path).name,
+            "run_name": final_run_name,
             "accuracy_overall": acc_overall,
             "accuracy_by_error_type": by_err,
             "accuracy_by_entity_type": by_ent,
             "rows": int(len(out)),
             "candidate_pool_size": len(all_candidates),
             "similarity_threshold": similarity_threshold,
+            "num_distractors": num_distractors,
+            "seed": seed,
+            "prompt_sha": prompt_sha,
+            "dataset_sha": dataset_sha,
         }
 
         summary_path = artifacts_dir / "summary.json"
         summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
-        # log artifacts into MLflow
         mlflow.log_artifact(str(pred_path))
         mlflow.log_artifact(str(summary_path))
         mlflow.log_artifact(prompt_path)
 
-        print(f"\nPROMPT: {Path(prompt_path).name}\nSUMMARY: {summary}")
+        print(f"\nPROMPT: {Path(prompt_path).name}\nRUN NAME: {final_run_name}\nSUMMARY: {summary}")
         return summary
 
 
 def main():
-    # Paths (adjust if your dataset lives somewhere else)
+    # Dataset path
     dataset_path = Path("benchmark_data") / "ccs_combined_buyer_supplier_benchmark.csv"
     if not dataset_path.exists():
-        # fallback: if the data in root
         dataset_path = Path("ccs_combined_buyer_supplier_benchmark.csv")
 
     if not dataset_path.exists():
@@ -248,15 +330,56 @@ def main():
             "  ccs_combined_buyer_supplier_benchmark.csv"
         )
 
+    # YAML config (run names + experiment name)
+    cfg = load_yaml_config("evaluation/run_descriptions.yaml")
+
+    default_experiment = "EXAMINE_name_matching_updated_scripts"
+    experiment_name = get_experiment_name(cfg, default_experiment)
+
     df = pd.read_csv(dataset_path).fillna("")
+    dataset_sha = sha256_text(df.to_csv(index=False))
 
     prompt_files = sorted(Path("prompts").glob("buyer_match_v*.txt"))
     if not prompt_files:
         raise FileNotFoundError("No prompt files found. Expected prompts/buyer_match_v*.txt")
 
-    for p in prompt_files:
-        evaluate_prompt_on_benchmark( df,str(p),num_distractors=20,seed=42,)
+    # Keep these consistent with what you log and search
+    similarity_threshold = 0.85
+    num_distractors = 20
+    seed = 42
 
+    for p in prompt_files:
+        prompt_file = p.name
+        prompt_sha = sha256_file(str(p))
+
+        # YAML description -> MLflow run name
+        desc = get_run_description(cfg, prompt_file)
+        run_name = desc or p.stem  # fallback to filename stem
+
+        # Skip if unchanged
+        if not should_rerun_prompt(
+            experiment_name=experiment_name,
+            prompt_file=prompt_file,
+            prompt_sha=prompt_sha,
+            dataset_sha=dataset_sha,
+            num_distractors=num_distractors,
+            seed=seed,
+            similarity_threshold=similarity_threshold,
+        ):
+            print(f"SKIP: {prompt_file} (no changes detected)")
+            continue
+
+        evaluate_prompt_on_benchmark(
+            df=df,
+            prompt_path=str(p),
+            experiment_name=experiment_name,
+            similarity_threshold=similarity_threshold,
+            num_distractors=num_distractors,
+            seed=seed,
+            run_name=run_name,
+            prompt_sha=prompt_sha,
+            dataset_sha=dataset_sha,
+        )
 
 
 if __name__ == "__main__":

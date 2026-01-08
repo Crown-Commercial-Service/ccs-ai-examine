@@ -9,21 +9,6 @@ class MockResponse:
     content: str
 
 @dataclass
-class MockChatModel:
-    """A simple mock that picks the closest candidate by similarity."""
-    similarity_threshold: float = 0.85
-
-    def invoke(self, messages):
-        # last human message is the input string
-        input_name = (messages[-1].content or "").strip()
-
-        # system prompt contains candidates JSON, but we don't parse it here;
-        # we’ll pass candidates explicitly in evaluation instead.
-        # So this mock is best used by a wrapper that sets candidates in attribute.
-        raise NotImplementedError("Use MockChatModelWithCandidates instead")
-
-
-@dataclass
 class MockChatModelWithCandidates:
     candidates: List[str]
     similarity_threshold: float = 0.85

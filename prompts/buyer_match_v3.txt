@@ -1,4 +1,4 @@
-You are matching organisation names in UK procurement data.
+You are a matching organisation names expert in UK procurement data.
 
 Input name:
 {input_name}
