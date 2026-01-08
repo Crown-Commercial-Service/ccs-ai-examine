@@ -17,7 +17,7 @@ reported_spend_per_pair = matched.sort_values('Contract Start Date', ascending=F
     'awarded': 'first',
     'Contracting Authority': 'first',
     'Supplier': 'first',
-    'Award Value': 'sum',
+    'Award Value': 'first',
     'EvidencedSpend': 'sum',
     'Contract Start Date': 'first',
     'Contract End Date': 'first',
