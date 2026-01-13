@@ -56,7 +56,8 @@ def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
         unique_unmatched_customers = unmatched_mi['CustomerName'].unique()
         name_map = {name: match_string_with_langchain(name, buyer_names_from_contracts, model) for name in unique_unmatched_customers}
         unmatched_mi['AIMatchedName'] = unmatched_mi['CustomerName'].map(name_map)
-        unmatched_mi['PairID'] = unmatched_mi['SupplierKey'].astype(str) + '+' + unmatched_mi['AIMatchedName'].str.lower()
+        # Ensure SupplierKey is treated as an integer string, to avoid mismatches due to float representations (e.g. '123.0' vs '123')
+        unmatched_mi['PairID'] = unmatched_mi['SupplierKey'].astype('Int64').astype(str) + '+' + unmatched_mi['AIMatchedName'].str.lower()
         # join unmatched MI onto contracts
         contracts_with_mi_AI = contracts.merge(unmatched_mi, on="PairID", how="left")
         
