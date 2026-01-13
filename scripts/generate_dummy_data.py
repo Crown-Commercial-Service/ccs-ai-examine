@@ -12,7 +12,7 @@ def generate_dummy_contracts_data():
     Row 5 = a contract which has no corresponding MI, and should be retained in the end data
     """
     data = {
-        'Contracting Authority': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions', 'Buyer no MI'],
+        'buyer': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions', 'Buyer no MI'],
         'Supplier': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1', 'Supplier no MI'],
         'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1001, 5678],
         'Contract Start Date': [pd.to_datetime(i) for i in ['2024-04-01', '2024-04-01', '2024-10-01', '2025-11-01', '2025-12-01']],
@@ -30,27 +30,31 @@ def generate_dummy_mi_data():
     """
     Generates a dummy pandas DataFrame mimicking the structure of the MI data.
     Rows 1-4 = one exemplary MI entry each for the contracts in the dummy contract dataset
-    Row 5 = another exemplary MI entry for the first contract, to check totalling
+    Row 5 = an MI entry for the first contract, but with its SupplierKey as a float, to check key conversion works as expected
     Row 6 = an MI entry for the second contract where the buyer name has been capitalised
     Row 7 = an MI entry for the third contract where the buyer name has been contracted
     Row 8 = an MI entry for the fourth contract where the buyer name acronym has been used
     Rows 9-10: MI entries for contracts which aren't in the dummy contracts dataset
     Row 11: an MI entry for a contract which isn't in the dummy contracts dataset, and which is missing its SupplierKey
     Row 12: an MI entry for a contract where both the buyer and supplier are in the contracts dataset under consistent names, but there isn't a contract between them in the contracts dataset
+    Row 13: an MI entry for the third contract where the buyer name has been contracted, and the SupplierKey is a float
     """
     data = {
         'SupplierName': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1',
                          'Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1',
-                         'Supplier 99', 'Supplier 100', 'Supplier 101', 'Supplier 1'],
-        'SupplierKey': [1, 2, 3, 1, 1, 2, 3, 1, 99, 100, np.nan, 1],
+                         'Supplier 99', 'Supplier 100', 'Supplier 101', 'Supplier 1',
+                         'Supplier 3'],
+        'SupplierKey': ['1', '2', '3', '1.0', '1', '2', '3', '1', '99', '100', np.nan, '1', '3.0'],
         'CustomerName': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions',
                          'Buyer A', 'BUYER B', 'Buyer C LTD', 'DWP',
-                         'Buyer Y', 'Buyer Z', 'Buyer Z', 'Buyer C Limited'],
-        'FinancialYear': [2024 for i in range(12)],
-        'FinancialMonth': range(0,12,1),
-        'EvidencedSpend': [1e5 for i in range(12)]
+                         'Buyer Y', 'Buyer Z', 'Buyer Z', 'Buyer C Limited',
+                         'Buyer C LTD'],
+        'FinancialYear': [2024 for i in range(13)],
+        'FinancialMonth': range(0,13,1),
+        'EvidencedSpend': [1e5 for i in range(13)]
     }
-    df = pd.DataFrame(data)
+    # ensure that SupplierKey mixed types are preserved 
+    df = pd.DataFrame(data).astype({'SupplierKey': 'object'})
     return df
 
 def generate_dummy_reg_key_pairs():
