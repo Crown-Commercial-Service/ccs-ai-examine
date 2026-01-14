@@ -1,7 +1,7 @@
 from typing import List
 from langchain_core.messages import SystemMessage, HumanMessage
 from tqdm import tqdm
-from langchain.callbacks.base import BaseCallbackHandler
+from langchain_core.callbacks.base import BaseCallbackHandler
 
 class TqdmCallbackHandler(BaseCallbackHandler):
     """Callback handler for tqdm progress bar."""
