@@ -1,6 +1,20 @@
 from typing import List
 from langchain_core.messages import SystemMessage, HumanMessage
 from tqdm import tqdm
+from langchain.callbacks.base import BaseCallbackHandler
+
+class TqdmCallbackHandler(BaseCallbackHandler):
+    """Callback handler for tqdm progress bar."""
+    def __init__(self, total: int):
+        self.pbar = tqdm(total=total, desc="Batch matching strings")
+
+    def on_llm_end(self, response, **kwargs):
+        """Update progress bar on LLM end."""
+        self.pbar.update(1)
+
+    def on_llm_error(self, error: Exception, **kwargs):
+        """Handle error if needed, maybe close the progress bar."""
+        self.pbar.close()
 
 def batch_match_string_with_langchain(input_strings: List[str], list_of_strings: List[str], model) -> List[str]:
     """
@@ -26,8 +40,14 @@ def batch_match_string_with_langchain(input_strings: List[str], list_of_strings:
         for input_string in input_strings
     ]
     
+    num_requests = len(input_strings)
+    tqdm_callback = TqdmCallbackHandler(total=num_requests)
+    
     print(f"Using LLM to find matches for {len(input_strings)} strings.")
-    responses = model.batch(tqdm(messages, desc="Batch matching strings"))
+    responses = model.batch(
+        messages, 
+        config={"callbacks": [tqdm_callback]}
+    )
     print(f"Got {len(responses)} responses.")
     return [response.content for response in responses]
 
