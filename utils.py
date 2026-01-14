@@ -1,5 +1,6 @@
 from typing import List
 from langchain_core.messages import SystemMessage, HumanMessage
+from tqdm import tqdm
 
 def batch_match_string_with_langchain(input_strings: List[str], list_of_strings: List[str], model) -> List[str]:
     """
@@ -26,7 +27,7 @@ def batch_match_string_with_langchain(input_strings: List[str], list_of_strings:
     ]
     
     print(f"Using LLM to find matches for {len(input_strings)} strings.")
-    responses = model.batch(messages)
+    responses = model.batch(tqdm(messages, desc="Batch matching strings"))
     print(f"Got {len(responses)} responses.")
     return [response.content for response in responses]
 
