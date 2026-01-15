@@ -2,7 +2,12 @@ import pandas as pd
 
 # read in data and make sure that column types are correct
 contracts = pd.read_csv("dummy_data/dummy_contracts.csv", low_memory=False)
-matched = pd.read_csv("dummy_data/dummy_combined.csv", low_memory=False)
+matched = pd.read_csv(
+    "dummy_data/dummy_combined.csv",
+    low_memory=False
+)
+matched['contract_start'] = pd.to_datetime(matched['contract_start'])
+matched['contract_end'] = pd.to_datetime(matched['contract_end'])
 matched = matched.rename(columns={
     'buyer': 'Contracting Authority',
     'suppliers': 'Supplier',
@@ -32,8 +37,6 @@ reported_spend_per_pair = recent_contracts_only.groupby('PairID').agg({
     'source': 'first',
     'latest_employees': 'first'
 }).reset_index(drop=True)
-reported_spend_per_pair['Contract Start Date'] = pd.to_datetime(reported_spend_per_pair['Contract Start Date'])
-reported_spend_per_pair['Contract End Date'] = pd.to_datetime(reported_spend_per_pair['Contract End Date'])
 # add a column of the number of months between each start date and the present day
 now = pd.Timestamp.now().normalize()
 reported_spend_per_pair['Total Months Run So Far'] = (
