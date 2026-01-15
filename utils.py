@@ -61,7 +61,7 @@ def batch_match_string_with_langchain(input_strings: List[str], list_of_strings:
 
         # Check if this chunk would exceed the TPM limit
         if tokens_sent_in_window + token_count > tpm_limit:
-            time_to_wait = 60 - (time.time() - window_start_time)
+            time_to_wait = 30 - (time.time() - window_start_time)
             if time_to_wait > 0:
                 print(f"TPM limit likely to be exceeded. Waiting for {time_to_wait:.2f} seconds.")
                 time.sleep(time_to_wait)
