@@ -19,12 +19,16 @@ def generate_dummy_contracts_data():
         'Contract Start Date': [pd.to_datetime(i) for i in ['2024-04-01', '2024-04-01', '2024-10-01', '2025-11-01', '2025-12-01', '2026-01-01']],
         'Contract End Date': [pd.to_datetime(i) for i in ['2025-04-01', '2027-04-01', '2027-10-01', '2028-04-01', '2027-05-01', '2026-07-01']],
         'Contract Duration (Months)': [12, 36, 36, 36, 24, 6],
-        'Contract Title': [f"Contract {i+1}" for i in range(6)],
-        'Contract Description': [f"Description for contract {i+1}, with commas that need to be handled when parsing" for i in range(6)],
-        'Total Contract Value - Low (GBP)': [1e6, 2.5e6, 5e6, 7.5e6, 10e6, 1e6]
+        'contract_title': [f"Contract {i+1}" for i in range(6)],
+        'contract_description': [f"Description for contract {i+1}, with commas that need to be handled when parsing" for i in range(6)],
+        'Award Value': [1e6, 2.5e6, 5e6, 7.5e6, 10e6, 1e6]
     }
     df = pd.DataFrame(data)
-    df['Total Contract Value - High (GBP)'] = df['Total Contract Value - Low (GBP)'] + 1e6
+    # add extra cols for metadata that isn't relevant to spend calc
+    df['framework_title'] = 'RM1'
+    df['source'] = 'Online'
+    df['awarded'] = df['Contract Start Date']
+    df['latest_employees'] = 10
     return df
 
 def generate_dummy_mi_data():
