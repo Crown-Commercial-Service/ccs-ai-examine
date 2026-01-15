@@ -14,20 +14,20 @@ def generate_dummy_contracts_data():
     """
     data = {
         'buyer': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions', 'Buyer no MI', 'Buyer A'],
-        'Supplier': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1', 'Supplier no MI', 'Supplier 1'],
+        'suppliers': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1', 'Supplier no MI', 'Supplier 1'],
         'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1001, 5678, 1001],
-        'Contract Start Date': [pd.to_datetime(i) for i in ['2024-04-01', '2024-04-01', '2024-10-01', '2025-11-01', '2025-12-01', '2026-01-01']],
-        'Contract End Date': [pd.to_datetime(i) for i in ['2025-04-01', '2027-04-01', '2027-10-01', '2028-04-01', '2027-05-01', '2026-07-01']],
-        'Contract Duration (Months)': [12, 36, 36, 36, 24, 6],
+        'contract_start': [pd.to_datetime(i) for i in ['2024-04-01', '2024-04-01', '2024-10-01', '2025-11-01', '2025-12-01', '2026-01-01']],
+        'contract_end': [pd.to_datetime(i) for i in ['2025-04-01', '2027-04-01', '2027-10-01', '2028-04-01', '2027-05-01', '2026-07-01']],
+        'contract_months': [12, 36, 36, 36, 24, 6],
         'contract_title': [f"Contract {i+1}" for i in range(6)],
         'contract_description': [f"Description for contract {i+1}, with commas that need to be handled when parsing" for i in range(6)],
-        'Award Value': [1e6, 2.5e6, 5e6, 7.5e6, 10e6, 1e6]
+        'award_value': [1e6, 2.5e6, 5e6, 7.5e6, 10e6, 1e6]
     }
     df = pd.DataFrame(data)
     # add extra cols for metadata that isn't relevant to spend calc
     df['framework_title'] = 'RM1'
     df['source'] = 'Online'
-    df['awarded'] = df['Contract Start Date']
+    df['awarded'] = df['contract_start']
     df['latest_employees'] = 10
     return df
 
