@@ -6,7 +6,7 @@ from langchain_openai import AzureChatOpenAI
 
 # Add the parent directory to the path so that we can import from 'utils'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from utils import match_string_with_langchain
+from utils import batch_match_string_with_langchain
 
 
 def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
@@ -18,7 +18,7 @@ def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
         model: optional LangChain model for fuzzy matching
     """
     if os.path.exists(contracts_data):
-        contracts = pd.read_csv(contracts_data)
+        contracts = pd.read_csv(contracts_data, dtype={'SupplierCompanyRegistrationNumber': str})
     else:
         raise Exception(f"Contracts data file {contracts_data} does not exist")
     if os.path.exists(mi_data):
@@ -27,7 +27,7 @@ def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
     else:
         raise Exception(f"MI data file {mi_data} does not exist")
     if os.path.exists(regno_key_pairs):
-        regno_keys = pd.read_csv(regno_key_pairs)
+        regno_keys = pd.read_csv(regno_key_pairs, dtype={'SupplierCompanyRegistrationNumber': str})
         regno_keys["SupplierKey"] = regno_keys["SupplierKey"].astype("Int64")
     else:
         raise Exception(f"Registration number - supplier key data file {regno_key_pairs} does not exist")
@@ -53,10 +53,12 @@ def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
     unmatched_mi = unmatched_mi_all[~unmatched_mi_all['CustomerName'].isin(mi_buyer_names_to_ignore)].copy()
 
     if model and not unmatched_mi.empty:
-        unique_unmatched_customers = unmatched_mi['CustomerName'].unique()
-        name_map = {name: match_string_with_langchain(name, buyer_names_from_contracts, model) for name in unique_unmatched_customers}
+        unique_unmatched_customers = unmatched_mi['CustomerName'].unique().tolist()
+        matched_names = batch_match_string_with_langchain(unique_unmatched_customers, buyer_names_from_contracts, model)
+        name_map = dict(zip(unique_unmatched_customers, matched_names))
         unmatched_mi['AIMatchedName'] = unmatched_mi['CustomerName'].map(name_map)
-        unmatched_mi['PairID'] = unmatched_mi['SupplierKey'].astype(str) + '+' + unmatched_mi['AIMatchedName'].str.lower()
+        # Ensure SupplierKey is treated as an integer string, to avoid mismatches due to float representations (e.g. '123.0' vs '123')
+        unmatched_mi['PairID'] = unmatched_mi['SupplierKey'].astype('Int64').astype(str) + '+' + unmatched_mi['AIMatchedName'].str.lower()
         # join unmatched MI onto contracts
         contracts_with_mi_AI = contracts.merge(unmatched_mi, on="PairID", how="left")
         
@@ -96,3 +98,13 @@ if __name__ == "__main__":
     # )
     # combined.to_csv("dummy_data/dummy_combined.csv", index=False)
     # unmatched.to_csv("dummy_data/dummy_unmatched_mi.csv", index=False)
+
+    # # run this block for debugging of isolated cases
+    # combined, unmatched = combine_data(
+    #     contracts_data="debugging/contracts.csv",
+    #     mi_data="debugging/mi.csv",
+    #     regno_key_pairs="debugging/reg_number_supplier_key.csv",
+    #     model=model
+    # )
+    # combined.to_csv("debugging/combined.csv", index=False)
+    # unmatched.to_csv("debugging/unmatched_mi.csv", index=False)

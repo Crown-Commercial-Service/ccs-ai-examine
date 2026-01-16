@@ -1,8 +1,13 @@
 import pandas as pd
 
 # read in data and make sure that column types are correct
-contracts = pd.read_csv("data/contracts.csv", low_memory=False)
-matched = pd.read_csv("data/combined.csv", low_memory=False)
+contracts = pd.read_csv("dummy_data/dummy_contracts.csv", low_memory=False)
+matched = pd.read_csv(
+    "dummy_data/dummy_combined.csv",
+    low_memory=False
+)
+matched['contract_start'] = pd.to_datetime(matched['contract_start'])
+matched['contract_end'] = pd.to_datetime(matched['contract_end'])
 matched = matched.rename(columns={
     'buyer': 'Contracting Authority',
     'suppliers': 'Supplier',
@@ -11,13 +16,15 @@ matched = matched.rename(columns={
     'contract_end': 'Contract End Date',
     'contract_months': 'Contract Duration (Months)',
 })
-unmatched = pd.read_csv("data/unmatched.csv", low_memory=False)
-# where a buyer-supplier pair has >1 contract, take the most recent contract
-reported_spend_per_pair = matched.sort_values('Contract Start Date', ascending=False).groupby('PairID').agg({
+unmatched = pd.read_csv("dummy_data/dummy_unmatched_mi.csv", low_memory=False)
+# For each buyer-supplier pair, find the most recent contract (or contracts, if they share the same start date)
+matched['MostRecentStartDate'] = matched.groupby(['Contracting Authority', 'Supplier'])['Contract Start Date'].transform('max')
+recent_contracts_only = matched[matched['Contract Start Date'] == matched['MostRecentStartDate']]
+
+# For each buyer-supplier pair, aggregate the spend from their most recent contract(s)
+reported_spend_per_pair = recent_contracts_only.groupby(['Contracting Authority', 'Supplier']).agg({
     'awarded': 'first',
-    'Contracting Authority': 'first',
-    'Supplier': 'first',
-    'Award Value': 'sum',
+    'Award Value': 'first',
     'EvidencedSpend': 'sum',
     'Contract Start Date': 'first',
     'Contract End Date': 'first',
@@ -27,9 +34,7 @@ reported_spend_per_pair = matched.sort_values('Contract Start Date', ascending=F
     'framework_title': 'first',
     'source': 'first',
     'latest_employees': 'first'
-}).reset_index(drop=True)
-reported_spend_per_pair['Contract Start Date'] = pd.to_datetime(reported_spend_per_pair['Contract Start Date'])
-reported_spend_per_pair['Contract End Date'] = pd.to_datetime(reported_spend_per_pair['Contract End Date'])
+}).reset_index()
 # add a column of the number of months between each start date and the present day
 now = pd.Timestamp.now().normalize()
 reported_spend_per_pair['Total Months Run So Far'] = (
@@ -59,7 +64,7 @@ summary_stats = {
 }
 summary_stats_df = pd.DataFrame(summary_stats)
 print(summary_stats_df)
-summary_stats_df.to_csv("data/summary_stats.csv", index=False)
+summary_stats_df.to_csv("dummy_data/dummy_summary_stats.csv", index=False)
 
 # line-level data output
-reported_spend_per_pair.to_csv("data/line_level.csv", index=False)
+reported_spend_per_pair.to_csv("dummy_data/dummy_line_level.csv", index=False)
