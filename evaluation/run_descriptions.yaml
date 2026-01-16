@@ -1,0 +1,33 @@
+# Prompt Descriptions Configuration
+
+prompts:
+  buyer_match_v1.txt:
+    description: "baseline_simple_typo_handling"
+    version: "1.0"
+    notes: "Basic prompt with minimal instructions for typo and punctuation handling"
+    
+  buyer_match_v2.txt:
+    description: "uk_public_sector_with_acronyms"
+    version: "2.0"
+    notes: "UK-specific prompt with acronym expansion and legal suffix handling"
+    
+  buyer_match_v3.txt:
+    description: "semantic_matching_with_relationships"
+    version: "3.0"
+    notes: "Advanced prompt with semantic equivalents and parent-subsidiary relationships"
+    
+  buyer_match_v4.txt:
+    description: "conservative_high_precision"
+    version: "4.0"
+    notes: "Conservative approach prioritizing precision over recall"
+
+# Configuration
+run_naming:
+  format: "{description}_mock_{timestamp}"  # Can be changed to just "{description}" to remove timestamp
+  include_timestamp: false  # Set to true to include timestamp to run name
+  timestamp_format: "%Y%m%d_%H%M%S"
+
+# MLflow settings
+mlflow:
+  experiment_name: "name_matching_prompts_evaluation"
+  tracking_uri: "file:./mlruns"
