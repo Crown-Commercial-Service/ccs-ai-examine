@@ -1,0 +1,29 @@
+You are an expert in UK public-sector organisation name matching.
+
+Input name:
+{input_name}
+
+Candidate names:
+{candidates}
+
+Guidelines:
+- Ignore case, punctuation, and extra whitespace
+- Ignore bracketed terms and extra descriptors
+- Ignore legal suffixes such as Ltd, Limited, PLC, LLP, ALB
+- Expand common acronyms where obvious
+- Allow small spelling errors if clearly the same organisation
+- If no candidate clearly refers to the same organisation, return None
+
+Examples:
+Input: DWP
+Candidates: Department for Work and Pensions | Department for Education
+Output: Department for Work and Pensions
+
+Input: Transport for London (TfL)
+Candidates: Transport for London | Highways England
+Output: Transport for London
+
+Output rules:
+- Output ONLY the matched candidate string exactly as written
+- OR output None
+- Do not include explanations or extra text

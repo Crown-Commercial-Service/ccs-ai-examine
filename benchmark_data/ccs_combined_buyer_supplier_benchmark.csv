@@ -1,0 +1,261 @@
+ID,Input Name,Match Option,Error Type,Entity Type,Category
+1,Home Ofice,Home Office,Typo,Buyer,Government Department
+2,Ministry of Defnce,Ministry of Defence,Typo,Buyer,Government Department
+3,Deparment of Education,Department for Education,Typo,Buyer,Government Department
+4,Foriegn Office,Foreign Office,Typo,Buyer,Government Department
+5,HM Trasury,HM Treasury,Typo,Buyer,Government Department
+6,Metropolitan Polcie,Metropolitan Police,Typo,Buyer,Police Force
+7,Cambridgeshire County Councl,Cambridgeshire County Council,Typo,Buyer,Local Authority
+8,Environment Agnecy,Environment Agency,Typo,Buyer,Executive Agency
+9,Ofice for National Statistics,Office for National Statistics,Typo,Buyer,Government Department
+10,Royal Mail Grp,Royal Mail Group,Typo,Buyer,Public Corporation
+11,Natinal Audit Office,National Audit Office,Typo,Buyer,Government Department
+12,Ministry of Justce,Ministry of Justice,Typo,Buyer,Government Department
+13,Bristl City Council,Bristol City Council,Typo,Buyer,Local Authority
+14,Welsh Goverment,Welsh Government,Typo,Buyer,Devolved Government
+15,Scotish Government,Scottish Government,Typo,Buyer,Devolved Government
+16,DWP,Department for Work and Pensions,Acronym,Buyer,Government Department
+17,HMRC,HM Revenue and Customs,Acronym,Buyer,Government Department
+18,DEFRA,Department for Environment Food and Rural Affairs,Acronym,Buyer,Government Department
+19,DCMS,Department for Culture Media and Sport,Acronym,Buyer,Government Department
+20,DfT,Department for Transport,Acronym,Buyer,Government Department
+21,MoD,Ministry of Defence,Acronym,Buyer,Government Department
+22,FCDO,Foreign Commonwealth and Development Office,Acronym,Buyer,Government Department
+23,MoJ,Ministry of Justice,Acronym,Buyer,Government Department
+24,ONS,Office for National Statistics,Acronym,Buyer,Government Department
+25,CPS,Crown Prosecution Service,Acronym,Buyer,Government Department
+26,EA,Environment Agency,Acronym,Buyer,Executive Agency
+27,NCA,National Crime Agency,Acronym,Buyer,Government Department
+28,DVLA,Driver and Vehicle Licensing Agency,Acronym,Buyer,Executive Agency
+29,HSE,Health and Safety Executive,Acronym,Buyer,Executive Agency
+30,CQC,Care Quality Commission,Acronym,Buyer,Executive Agency
+31,Transport for London (TfL),Transport for London,Brackets,Buyer,Local Authority
+32,Scottish Environment Protection Agency (SEPA),Scottish Environment Protection Agency,Brackets,Buyer,Executive Agency
+33,Health and Safety Executive (HSE),Health and Safety Executive,Brackets,Buyer,Executive Agency
+34,National Health Service (NHS),National Health Service,Brackets,Buyer,Health Service
+35,Government Digital Service (GDS),Government Digital Service,Brackets,Buyer,Government Department
+36,Cabinet Office (CO),Cabinet Office,Brackets,Buyer,Government Department
+37,Natural England (NE),Natural England,Brackets,Buyer,Executive Agency
+38,Companies House (CH),Companies House,Brackets,Buyer,Executive Agency
+39,UK Space Agency (UKSA),UK Space Agency,Brackets,Buyer,Executive Agency
+40,Arts Council England (ACE),Arts Council England,Brackets,Buyer,NDPB
+41,Food Standards Agency (FSA),Food Standards Agency,Brackets,Buyer,Executive Agency
+42,Intellectual Property Office (IPO),Intellectual Property Office,Brackets,Buyer,Executive Agency
+43,UK Research and Innovation (UKRI),UK Research and Innovation,Brackets,Buyer,NDPB
+44,Competition and Markets Authority (CMA),Competition and Markets Authority,Brackets,Buyer,NDPB
+45,Medicines and Healthcare products Regulatory Agency (MHRA),Medicines and Healthcare products Regulatory Agency,Brackets,Buyer,Executive Agency
+46,NHS England National Body,NHS England,Extra descriptor,Buyer,Health Service
+47,Birmingham City Council Local Authority,Birmingham City Council,Extra descriptor,Buyer,Local Authority
+48,University of Oxford HEI,University of Oxford,Extra descriptor,Buyer,Higher Education
+49,Manchester University NHS Foundation Trust Hospital,Manchester University NHS Foundation Trust,Extra descriptor,Buyer,NHS Trust
+50,Greater Manchester Police Force,Greater Manchester Police,Extra descriptor,Buyer,Police Force
+51,Ministry of Defence Central Government,Ministry of Defence,Extra descriptor,Buyer,Government Department
+52,London Fire Brigade Emergency Service,London Fire Brigade,Extra descriptor,Buyer,Emergency Service
+53,Network Rail Infrastructure Provider,Network Rail,Extra descriptor,Buyer,Public Corporation
+54,British Library National Library,British Library,Extra descriptor,Buyer,NDPB
+55,Historic England NDPB,Historic England,Extra descriptor,Buyer,NDPB
+56,UK Export Finance Department,UK Export Finance,Extra descriptor,Buyer,Government Department
+57,Scottish Government Devolved Administration,Scottish Government,Extra descriptor,Buyer,Devolved Government
+58,Nuclear Decommissioning Authority Public Body,Nuclear Decommissioning Authority,Extra descriptor,Buyer,NDPB
+59,Crown Commercial Service Executive Agency,Crown Commercial Service,Extra descriptor,Buyer,Executive Agency
+60,Government Legal Department Ministerial,Government Legal Department,Extra descriptor,Buyer,Government Department
+61,Addenbrookes Hospital,Cambridge University Hospitals NHS Foundation Trust,Semantic equivalent,Buyer,NHS Trust
+62,Foreign Office,Foreign Commonwealth and Development Office,Semantic equivalent,Buyer,Government Department
+63,The Treasury,HM Treasury,Semantic equivalent,Buyer,Government Department
+64,Tax Office,HM Revenue and Customs,Semantic equivalent,Buyer,Government Department
+65,Job Centre,Department for Work and Pensions,Semantic equivalent,Buyer,Government Department
+66,Passport Office,HM Passport Office,Semantic equivalent,Buyer,Executive Agency
+67,Patent Office,Intellectual Property Office,Semantic equivalent,Buyer,Executive Agency
+68,Royal Parks,The Royal Parks,Semantic equivalent,Buyer,Executive Agency
+69,British Museum,The British Museum,Semantic equivalent,Buyer,NDPB
+70,GCHQ,Government Communications Headquarters,Semantic equivalent,Buyer,Government Department
+71,National Gallery,The National Gallery,Semantic equivalent,Buyer,NDPB
+72,Imperial War Museum,Imperial War Museums,Semantic equivalent,Buyer,NDPB
+73,Science Museum,Science Museum Group,Semantic equivalent,Buyer,NDPB
+74,Royal Mint,The Royal Mint,Semantic equivalent,Buyer,Public Corporation
+75,UK Statistics Authority,Office for National Statistics,Semantic equivalent,Buyer,Government Department
+76,NHS Digital,NHS England,Organizational transformation,Buyer,Health Service
+77,Highways England,National Highways,Organizational transformation,Buyer,Executive Agency
+78,Public Health England,UK Health Security Agency,Organizational transformation,Buyer,Executive Agency
+79,UK Trade and Investment,Department for International Trade,Organizational transformation,Buyer,Government Department
+80,Department for Business Innovation and Skills,Department for Business Energy and Industrial Strategy,Organizational transformation,Buyer,Government Department
+81,NHS Improvement,NHS England,Organizational transformation,Buyer,Health Service
+82,Monitor,NHS Improvement,Organizational transformation,Buyer,Health Service
+83,Technology Strategy Board,Innovate UK,Organizational transformation,Buyer,NDPB
+84,UK Border Agency,Border Force,Organizational transformation,Buyer,Government Department
+85,Identity and Passport Service,HM Passport Office,Organizational transformation,Buyer,Executive Agency
+86,Department for International Development,Foreign Commonwealth and Development Office,Organizational transformation,Buyer,Government Department
+87,Department for Business Energy and Industrial Strategy,Department for Energy Security and Net Zero,Organizational transformation,Buyer,Government Department
+88,Department for Digital Culture Media and Sport,Department for Culture Media and Sport,Organizational transformation,Buyer,Government Department
+89,Skills Funding Agency,Education and Skills Funding Agency,Organizational transformation,Buyer,Executive Agency
+90,Department for Levelling Up Housing and Communities,Ministry of Housing Communities and Local Government,Organizational transformation,Buyer,Government Department
+91,NHS Blood and Transplant,Department of Health and Social Care,Parent-subsidiary,Buyer,Health Service
+92,Government Legal Department,Attorney General's Office,Parent-subsidiary,Buyer,Government Department
+93,Royal Parks,Department for Culture Media and Sport,Parent-subsidiary,Buyer,Executive Agency
+94,British Transport Police,Department for Transport,Parent-subsidiary,Buyer,Police Force
+95,Crown Prosecution Service,Attorney General's Office,Parent-subsidiary,Buyer,Government Department
+96,National Highways,Department for Transport,Parent-subsidiary,Buyer,Executive Agency
+97,Forestry England,Forestry Commission,Parent-subsidiary,Buyer,Executive Agency
+98,Historic England,Department for Culture Media and Sport,Parent-subsidiary,Buyer,NDPB
+99,Natural England,Department for Environment Food and Rural Affairs,Parent-subsidiary,Buyer,Executive Agency
+100,UK Space Agency,Department for Science Innovation and Technology,Parent-subsidiary,Buyer,Executive Agency
+101,Department for Business & Trade,Department for Business and Trade,Special character,Buyer,Government Department
+102,Kensington & Chelsea Council,Royal Borough of Kensington and Chelsea,Special character,Buyer,Local Authority
+103,King's College London,Kings College London,Special character,Buyer,Higher Education
+104,St. Mary's Hospital,St Marys Hospital,Special character,Buyer,NHS Trust
+105,U.K. Space Agency,UK Space Agency,Special character,Buyer,Executive Agency
+106,HM Revenue & Customs,HM Revenue and Customs,Special character,Buyer,Government Department
+107,Queen's University Belfast,Queens University Belfast,Special character,Buyer,Higher Education
+108,St. Thomas' Hospital,St Thomas Hospital,Special character,Buyer,NHS Trust
+109,Arts & Humanities Research Council,Arts and Humanities Research Council,Special character,Buyer,NDPB
+110,Children's Commissioner,Childrens Commissioner,Special character,Buyer,NDPB
+111,Women's Aid,Womens Aid,Special character,Buyer,Charity
+112,Christie's Hospital,Christies Hospital,Special character,Buyer,NHS Trust
+113,Guy's and St Thomas' NHS Trust,Guys and St Thomas NHS Trust,Special character,Buyer,NHS Trust
+114,Royal College of Physicians & Surgeons,Royal College of Physicians and Surgeons,Special character,Buyer,Professional Body
+115,St. George's Hospital,St Georges Hospital,Special character,Buyer,NHS Trust
+116,Rutland County Council,N/A,Negative control - no match,Buyer,Local Authority
+117,Melton Borough Council,N/A,Negative control - no match,Buyer,Local Authority
+118,Richmondshire District Council,N/A,Negative control - no match,Buyer,Local Authority
+119,Copeland Borough Council,N/A,Negative control - no match,Buyer,Local Authority
+120,Eden District Council,N/A,Negative control - no match,Buyer,Local Authority
+121,N/A,Department for Loch Ness Monster,Negative control - spurious,Buyer,Government Department
+122,N/A,Ministry of Unicorn Affairs,Negative control - spurious,Buyer,Government Department
+123,N/A,Office for Dragon Management,Negative control - spurious,Buyer,Executive Agency
+124,N/A,National Fairy Council,Negative control - spurious,Buyer,NDPB
+125,N/A,Department of Time Travel,Negative control - spurious,Buyer,Government Department
+126,Accentre UK Ltd,Accenture UK Ltd,Typo,Supplier,Professional Services
+127,Capgem ini,Capgemini,Typo,Supplier,Digital and Technology Services
+128,Deloit te,Deloitte,Typo,Supplier,Financial Services
+129,Mitie Grp PLC,Mitie Group PLC,Typo,Supplier,Facilities Management
+130,Sodex o Limited,Sodexo Limited,Typo,Supplier,Facilities Management
+131,Serc o Group,Serco Group,Typo,Supplier,Outsourced Services
+132,Cap ita PLC,Capita PLC,Typo,Supplier,Outsourced Services
+133,Balfour Beaty,Balfour Beatty,Typo,Supplier,Construction
+134,Kier Grp,Kier Group,Typo,Supplier,Construction
+135,Copass Group,Compass Group,Typo,Supplier,Facilities Management
+136,Cognizent,Cognizant,Typo,Supplier,Digital and Technology Services
+137,Britsh Telecom,British Telecom,Typo,Supplier,Network Services
+138,Fujitsu Sevices,Fujitsu Services,Typo,Supplier,Digital and Technology Services
+139,Lex Auto lease,Lex Autolease,Typo,Supplier,Fleet
+140,Centerica,Centrica,Typo,Supplier,Energy
+141,PwC,PricewaterhouseCoopers,Acronym,Supplier,Professional Services
+142,EY,Ernst and Young,Acronym,Supplier,Professional Services
+143,KPMG,Klynveld Peat Marwick Goerdeler,Acronym,Supplier,Professional Services
+144,BT,British Telecom,Acronym,Supplier,Network Services
+145,ISS,ISS Facility Services,Acronym,Supplier,Facilities Management
+146,TCS,Tata Consultancy Services,Acronym,Supplier,Digital and Technology Services
+147,CGI,Conseillers en Gestion et Informatique,Acronym,Supplier,Digital and Technology Services
+148,G4S,Group 4 Securicor,Acronym,Supplier,Facilities Management
+149,OCS,Office Cleaning Services,Acronym,Supplier,Facilities Management
+150,DXC,DXC Technology,Acronym,Supplier,Digital and Technology Services
+151,JLL,Jones Lang LaSalle,Acronym,Supplier,Estates Support Services
+152,WSP,WSP Global,Acronym,Supplier,Professional Services
+153,AECOM,Architecture Engineering Consulting Operations Maintenance,Acronym,Supplier,Professional Services
+154,BAM,Bataafsche Aanneming Maatschappij,Acronym,Supplier,Construction
+155,HCL,Hindustan Computers Limited,Acronym,Supplier,Digital and Technology Services
+156,Accenture (UK) Limited,Accenture UK Limited,Brackets,Supplier,Professional Services
+157,IBM United Kingdom Limited (IBM UK),IBM United Kingdom Limited,Brackets,Supplier,Digital and Technology Services
+158,Deloitte LLP (UK),Deloitte LLP,Brackets,Supplier,Professional Services
+159,Capita Business Services Ltd (Capita),Capita Business Services Ltd,Brackets,Supplier,Outsourced Services
+160,Mitie Group PLC (Mitie),Mitie Group PLC,Brackets,Supplier,Facilities Management
+161,Sodexo Limited (UK),Sodexo Limited,Brackets,Supplier,Facilities Management
+162,BT Group plc (British Telecom),BT Group plc,Brackets,Supplier,Network Services
+163,Capgemini UK plc (Capgemini),Capgemini UK plc,Brackets,Supplier,Digital and Technology Services
+164,KPMG LLP (UK),KPMG LLP,Brackets,Supplier,Financial Services
+165,Compass Group UK and Ireland Limited (Compass),Compass Group UK and Ireland Limited,Brackets,Supplier,Facilities Management
+166,Serco Group plc (Serco),Serco Group plc,Brackets,Supplier,Outsourced Services
+167,Atos IT Services UK Limited (Atos),Atos IT Services UK Limited,Brackets,Supplier,Digital and Technology Services
+168,Balfour Beatty plc (BB),Balfour Beatty plc,Brackets,Supplier,Construction
+169,Centrica Business Solutions (Centrica),Centrica Business Solutions,Brackets,Supplier,Energy
+170,Alphabet (GB) Limited (Alphabet Fleet),Alphabet GB Limited,Brackets,Supplier,Fleet
+171,Accenture UK Ltd,Accenture UK Limited,Legal entity suffix,Supplier,Professional Services
+172,Capita plc,Capita PLC,Legal entity suffix,Supplier,Outsourced Services
+173,Mitie Group PLC,Mitie Group plc,Legal entity suffix,Supplier,Facilities Management
+174,Serco Group plc,Serco Group PLC,Legal entity suffix,Supplier,Outsourced Services
+175,Deloitte LLP,Deloitte Limited Liability Partnership,Legal entity suffix,Supplier,Professional Services
+176,PwC LLP,PricewaterhouseCoopers LLP,Legal entity suffix,Supplier,Financial Services
+177,KPMG LLP,KPMG Limited Liability Partnership,Legal entity suffix,Supplier,Financial Services
+178,BT Group plc,BT Group PLC,Legal entity suffix,Supplier,Network Services
+179,Compass Group UK Ltd,Compass Group UK Limited,Legal entity suffix,Supplier,Facilities Management
+180,Sodexo Ltd,Sodexo Limited,Legal entity suffix,Supplier,Facilities Management
+181,Balfour Beatty plc,Balfour Beatty PLC,Legal entity suffix,Supplier,Construction
+182,Kier Group plc,Kier Group PLC,Legal entity suffix,Supplier,Construction
+183,Interserve Ltd,Interserve Limited,Legal entity suffix,Supplier,Construction
+184,ISS Facility Services Ltd,ISS Facility Services Limited,Legal entity suffix,Supplier,Facilities Management
+185,Lex Autolease Ltd,Lex Autolease Limited,Legal entity suffix,Supplier,Fleet
+186,IBM UK,IBM United Kingdom Limited,Semantic equivalent,Supplier,Digital and Technology Services
+187,Microsoft UK,Microsoft Limited,Semantic equivalent,Supplier,Software
+188,Oracle UK,Oracle Corporation UK Limited,Semantic equivalent,Supplier,Software
+189,Amazon Web Services,Amazon Web Services EMEA SARL UK Branch,Semantic equivalent,Supplier,Cloud and Hosting
+190,AWS,Amazon Web Services,Semantic equivalent,Supplier,Cloud and Hosting
+191,Google Cloud,Google Cloud EMEA Limited,Semantic equivalent,Supplier,Cloud and Hosting
+192,SAP UK,SAP UK Limited,Semantic equivalent,Supplier,Software
+193,Salesforce UK,Salesforce.com UK Limited,Semantic equivalent,Supplier,Software
+194,HP UK,HP Inc UK Limited,Semantic equivalent,Supplier,Hardware
+195,Dell UK,Dell Computer Corporation Limited,Semantic equivalent,Supplier,Hardware
+196,Cisco UK,Cisco Systems Limited,Semantic equivalent,Supplier,Network Services
+197,Fujitsu UK,Fujitsu Services Limited,Semantic equivalent,Supplier,Digital and Technology Services
+198,Vodafone Business,Vodafone Limited,Semantic equivalent,Supplier,Network Services
+199,British Gas Business,Centrica Business Solutions,Semantic equivalent,Supplier,Energy
+200,EDF Energy,EDF Energy Customers plc,Semantic equivalent,Supplier,Energy
+201,Hewlett Packard Enterprise UK,DXC Technology,Organizational transformation,Supplier,Digital and Technology Services
+202,Computer Sciences Corporation,DXC Technology,Organizational transformation,Supplier,Digital and Technology Services
+203,PA Consulting,Jacobs,Organizational transformation,Supplier,Professional Services
+204,Carillion,Kier Group,Organizational transformation,Supplier,Construction
+205,Interserve Facilities Management,Mitie Group,Organizational transformation,Supplier,Facilities Management
+206,Cable and Wireless,Vodafone,Organizational transformation,Supplier,Network Services
+207,EDS,HP Enterprise Services,Organizational transformation,Supplier,Digital and Technology Services
+208,Logica,CGI,Organizational transformation,Supplier,Digital and Technology Services
+209,CSC,DXC Technology,Organizational transformation,Supplier,Digital and Technology Services
+210,Morrison Facilities Services,ISS Facility Services,Organizational transformation,Supplier,Facilities Management
+211,Connaught,Morrison Construction,Organizational transformation,Supplier,Construction
+212,May Gurney,Kier Group,Organizational transformation,Supplier,Construction
+213,Mouchel,Kier Group,Organizational transformation,Supplier,Professional Services
+214,McNicholas,Balfour Beatty,Organizational transformation,Supplier,Construction
+215,Parsons Brinckerhoff,WSP,Organizational transformation,Supplier,Professional Services
+216,Accenture UK Limited,Accenture plc,Parent-subsidiary,Supplier,Professional Services
+217,IBM United Kingdom Limited,IBM Corporation,Parent-subsidiary,Supplier,Digital and Technology Services
+218,Microsoft Limited,Microsoft Corporation,Parent-subsidiary,Supplier,Software
+219,Capgemini UK plc,Capgemini SE,Parent-subsidiary,Supplier,Digital and Technology Services
+220,Deloitte UK,Deloitte Touche Tohmatsu Limited,Parent-subsidiary,Supplier,Professional Services
+221,KPMG UK,KPMG International,Parent-subsidiary,Supplier,Financial Services
+222,EY UK,Ernst and Young Global,Parent-subsidiary,Supplier,Professional Services
+223,PwC UK,PricewaterhouseCoopers International,Parent-subsidiary,Supplier,Financial Services
+224,Sodexo UK,Sodexo SA,Parent-subsidiary,Supplier,Facilities Management
+225,Compass Group UK,Compass Group PLC,Parent-subsidiary,Supplier,Facilities Management
+226,ISS UK,ISS A/S,Parent-subsidiary,Supplier,Facilities Management
+227,Serco UK,Serco Group plc,Parent-subsidiary,Supplier,Outsourced Services
+228,Mitie Facilities Services,Mitie Group PLC,Parent-subsidiary,Supplier,Facilities Management
+229,BT Business,BT Group plc,Parent-subsidiary,Supplier,Network Services
+230,Fujitsu Services UK,Fujitsu Limited,Parent-subsidiary,Supplier,Digital and Technology Services
+231,Ernst & Young,Ernst and Young,Special character,Supplier,Professional Services
+232,Marks & Spencer Business Services,Marks and Spencer Business Services,Special character,Supplier,Outsourced Services
+233,Knight Frank LLP,Knight Frank,Special character,Supplier,Estates Support Services
+234,Savills (UK) Ltd,Savills UK Limited,Special character,Supplier,Estates Support Services
+235,Turner & Townsend,Turner and Townsend,Special character,Supplier,Professional Services
+236,Mott MacDonald Ltd,Mott MacDonald Limited,Special character,Supplier,Professional Services
+237,Gleeds Management Services Ltd,Gleeds Management Services Limited,Special character,Supplier,Professional Services
+238,Rider Levett Bucknall UK Ltd,Rider Levett Bucknall UK Limited,Special character,Supplier,Professional Services
+239,Arcadis (UK) Ltd,Arcadis UK Limited,Special character,Supplier,Professional Services
+240,Arup Group Ltd,Arup Group Limited,Special character,Supplier,Professional Services
+241,Accenture Strategy,Accenture UK Limited,Division name,Supplier,Professional Services
+242,Accenture Technology,Accenture UK Limited,Division name,Supplier,Digital and Technology Services
+243,Deloitte Consulting,Deloitte LLP,Division name,Supplier,Professional Services
+244,Capita IT Services,Capita Business Services Limited,Division name,Supplier,Digital and Technology Services
+245,Serco Defence,Serco Group plc,Division name,Supplier,Outsourced Services
+246,BT Business,BT Group plc,Division name,Supplier,Network Services
+247,BT Openreach,BT Group plc,Division name,Supplier,Network Services
+248,Mitie Technical Services,Mitie Group PLC,Division name,Supplier,Facilities Management
+249,Compass Healthcare,Compass Group UK Limited,Division name,Supplier,Facilities Management
+250,Balfour Beatty Living Places,Balfour Beatty plc,Division name,Supplier,Construction
+251,Fictional Tech Solutions Ltd,N/A,Negative control - no match,Supplier,Digital and Technology Services
+252,Non-Existent Consulting Group,N/A,Negative control - no match,Supplier,Professional Services
+253,Imaginary Facilities Management,N/A,Negative control - no match,Supplier,Facilities Management
+254,Made-Up Construction Company,N/A,Negative control - no match,Supplier,Construction
+255,Phantom IT Services,N/A,Negative control - no match,Supplier,Digital and Technology Services
+256,N/A,Unicorn Tech Consulting Ltd,Negative control - spurious,Supplier,Professional Services
+257,N/A,Dragon Facilities Management,Negative control - spurious,Supplier,Facilities Management
+258,N/A,Phoenix IT Solutions,Negative control - spurious,Supplier,Digital and Technology Services
+259,N/A,Wizard Construction Group,Negative control - spurious,Supplier,Construction
+260,N/A,Kraken Cloud Services,Negative control - spurious,Supplier,Cloud and Hosting

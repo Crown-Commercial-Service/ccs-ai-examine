@@ -20,3 +20,7 @@ langchain
 langchain-openai
 tqdm
 tiktoken
+mlflow
+uvicorn
+pytest
+PyYAML
