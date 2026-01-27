@@ -7,21 +7,32 @@ def generate_dummy_contracts_data():
     """
     Generates a dummy pandas DataFrame mimicking the structure of the contracts data from Tussell.
     Row 1 = a contract which has expired
-    Rows 2-3 = contracts which are still live and have been runnning for >1 year
+    Rows 2-3 = contracts which are still live and have been running for >1 year
     Row 4 = a contract which is still live and has been running for <1 year
     Row 5 = a contract which has no corresponding MI, and should be retained in the end data
     Row 6 = a more recent contract between the buyer and supplier of row 1, to test whether anything is being double-counted
+    Row 7 = a contract with Supplier 6 and Buyer A (for edge case -  MI reports "Buyer A Department")
+    Row 8 = a contract with Supplier 7 and Buyer A (for edge case -  MI reports "Buyer A Department")
+    Row 9 = a contract with Supplier 8 and Department for Work and Pensions (for edge case -  MI reports "DWP Office")
+    Row 10 = a contract with Supplier 9 and Department for Work and Pensions (for edge case- MI reports "DWP Office")
     """
     data = {
-        'buyer': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions', 'Buyer no MI', 'Buyer A'],
-        'suppliers': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1', 'Supplier no MI', 'Supplier 1'],
-        'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1001, 5678, 1001],
-        'contract_start': [pd.to_datetime(i) for i in ['2024-04-01', '2024-04-01', '2024-10-01', '2025-11-01', '2025-12-01', '2026-01-01']],
-        'contract_end': [pd.to_datetime(i) for i in ['2025-04-01', '2027-04-01', '2027-10-01', '2028-04-01', '2027-05-01', '2026-07-01']],
-        'contract_months': [12, 36, 36, 36, 24, 6],
-        'contract_title': [f"Contract {i+1}" for i in range(6)],
-        'contract_description': [f"Description for contract {i+1}, with commas that need to be handled when parsing" for i in range(6)],
-        'award_value': [1e6, 2.5e6, 5e6, 7.5e6, 10e6, 1e6]
+        'buyer': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions', 'Buyer no MI', 'Buyer A',
+                  'Buyer A', 'Buyer A', 'Department for Work and Pensions', 'Department for Work and Pensions'],
+        'suppliers': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1', 'Supplier no MI', 'Supplier 1',
+                      'Supplier 6', 'Supplier 7', 'Supplier 8', 'Supplier 9'],
+        'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1001, 5678, 1001,
+                                               1006, 1007, 1008, 1009],
+        'contract_start': [pd.to_datetime(i) for i in ['2024-04-01', '2024-04-01', '2024-10-01', '2025-11-01', '2025-12-01', '2026-01-01',
+                                                        '2024-06-01', '2024-07-01', '2024-08-01', '2024-09-01']],
+        'contract_end': [pd.to_datetime(i) for i in ['2025-04-01', '2027-04-01', '2027-10-01', '2028-04-01', '2027-05-01', '2026-07-01',
+                                                      '2027-06-01', '2027-07-01', '2027-08-01', '2027-09-01']],
+        'contract_months': [12, 36, 36, 36, 24, 6,
+                            36, 36, 36, 36],
+        'contract_title': [f"Contract {i+1}" for i in range(10)],
+        'contract_description': [f"Description for contract {i+1}, with commas that need to be handled when parsing" for i in range(10)],
+        'award_value': [1e6, 2.5e6, 5e6, 7.5e6, 10e6, 1e6,
+                        3e6, 3e6, 4e6, 4e6]
     }
     df = pd.DataFrame(data)
     # add extra cols for metadata that isn't relevant to spend calc
@@ -43,20 +54,30 @@ def generate_dummy_mi_data():
     Row 11: an MI entry for a contract which isn't in the dummy contracts dataset, and which is missing its SupplierKey
     Row 12: an MI entry for a contract where both the buyer and supplier are in the contracts dataset under consistent names, but there isn't a contract between them in the contracts dataset
     Row 13: an MI entry for the third contract where the buyer name has been contracted, and the SupplierKey is a float
+    Row 14: an MI entry using incorrect buyer name "Buyer A Department" - first instance (edge case: should match to "Buyer A")
+    Row 15: an MI entry using the same incorrect buyer name "Buyer A Department" - second instance by different supplier (edge case: both uses same wrong name)
+    Row 16: an MI entry using incorrect buyer name "DWP Office" - first instance (edge case: should match to "Department for Work and Pensions")
+    Row 17: an MI entry using the same incorrect buyer name "DWP Office" - second instance by different supplier (edge case: both uses same wrong name)
     """
     data = {
         'SupplierName': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1',
                          'Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1',
                          'Supplier 99', 'Supplier 100', 'Supplier 101', 'Supplier 1',
-                         'Supplier 3'],
-        'SupplierKey': ['1', '2', '3', '1.0', '1', '2', '3', '1', '99', '100', np.nan, '1', '3.0'],
+                         'Supplier 3',
+                         'Supplier 6', 'Supplier 7',
+                         'Supplier 8', 'Supplier 9'],
+        'SupplierKey': ['1', '2', '3', '1.0', '1', '2', '3', '1', '99', '100', np.nan, '1', '3.0',
+                        '6', '7',
+                        '8', '9'],
         'CustomerName': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions',
                          'Buyer A', 'BUYER B', 'Buyer C LTD', 'DWP',
                          'Buyer Y', 'Buyer Z', 'Buyer Z', 'Buyer C Limited',
-                         'Buyer C LTD'],
-        'FinancialYear': [2024 for i in range(13)],
-        'FinancialMonth': range(0,13,1),
-        'EvidencedSpend': [1e5 for i in range(13)]
+                         'Buyer C LTD',
+                         'Buyer A Department', 'Buyer A Department',
+                         'DWP Office', 'DWP Office'],
+        'FinancialYear': [2024 for i in range(17)],
+        'FinancialMonth': range(0, 17, 1),
+        'EvidencedSpend': [1e5 for i in range(17)]
     }
     # ensure that SupplierKey mixed types are preserved 
     df = pd.DataFrame(data).astype({'SupplierKey': 'object'})
@@ -67,8 +88,8 @@ def generate_dummy_reg_key_pairs():
     Generates a dummy DataFrame of SupplierKey and CompanyRegistrationNumber pairs.
     """
     data = {
-        'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1099, 1100, 5678],
-        'SupplierKey': [1, 2, 3, 99, 100, 4678]
+        'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1099, 1100, 5678, 1006, 1007, 1008, 1009],
+        'SupplierKey': [1, 2, 3, 99, 100, 4678, 6, 7, 8, 9]
     }
     df = pd.DataFrame(data)
     return df
