@@ -23,4 +23,5 @@ tiktoken
 mlflow
 uvicorn
 pytest
-PyYAML
+Pyyaml
+dvc

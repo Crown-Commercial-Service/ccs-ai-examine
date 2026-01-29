@@ -57,18 +57,23 @@ CCS-AI-EXAMINE/
 │   ├── buyer_match_v2.txt
 │   ├── buyer_match_v3.txt
 │   └── buyer_match_v4.txt
+├── scripts/
+│   ├── download_data.py     # Download contracts and MI data (has both dummy and live data functions)
+│   ├── combine_data.py      # Match contracts with MI using LLM
+│   └── summarise_data.py    # Generate summary statistics
 ├── tests/
 │   ├── test_distractors.py
 │   └── test_mock_and_utils.py
 ├── mlruns/
 ├── mlflow_outputs/
+├── params.yaml              # Pipeline configuration
+├── dvc.yaml                 # Pipeline definition
+├── run_pipeline.py          # Pipeline execution script
 ├── utils.py
-├── utils_old.py
 ├── requirements.txt
 └── README.md
-```
 
----
+```
 
 ## Key Concepts
 
@@ -76,6 +81,76 @@ CCS-AI-EXAMINE/
 - **Prompt-driven Evaluation**: Prompts are read from files, not hard-coded.
 - **Mock LLM**: Used while Azure OpenAI access is pending.
 - **MLflow Tracking**: Captures accuracy, breakdowns and artifacts per prompt version.
+- **DVC Pipeline**: Automates data download, matching and summarization with reproducibility.
+
+---
+
+## DVC Pipeline
+
+### Overview
+
+The DVC pipeline automates the revenue assurance workflow in three stages:
+
+1. **Download Data**: Retrieves contracts and MI data
+2. **Combine Data**: Matches contracts with MI using LLM-based name matching
+3. **Summarize Data**: Generates statistics on matched/unmatched entries
+
+### Pipeline Modes
+
+The pipeline supports two modes:
+- **Dummy Mode**: Uses generated test data for development and testing
+- **Live Mode**: Uses real database data (requires credentials)
+
+**Note**: Currently using mock data for live mode as database credentials are pending. This allows verification that all pipeline stages work correctly.
+
+### Running the Pipeline
+
+#### 1. Configure Mode
+
+Edit `params.yaml` to set the mode:
+
+```yaml
+data_mode: dummy  # or 'live'
+```
+
+#### 2. Run Pipeline
+
+```bash
+python run_pipeline.py
+```
+
+This automatically:
+- Reads the mode from `params.yaml`
+- Executes the appropriate pipeline stages
+- Generates outputs in `dummy_data/` or `data/` folder
+
+#### 3. View Pipeline DAG
+
+```bash
+# View all stages
+python -m dvc dag
+
+# View specific mode
+python -m dvc dag download_data_dummy combine_data_dummy summarise_data_dummy
+```
+
+### Pipeline Outputs
+
+**Dummy Mode** (`dummy_data/`):
+- `dummy_contracts.csv` - Test contract data
+- `dummy_mi.csv` - Test MI data
+- `dummy_combined.csv` - Matched data
+- `dummy_unmatched_mi.csv` - Unmatched MI entries
+- `dummy_summary_stats.csv` - Summary statistics
+- `dummy_line_level.csv` - Per buyer-supplier pair details
+
+**Live Mode** (`data/`):
+- `contracts.csv` - Real contract data
+- `mi.csv` - Real MI data
+- `combined.csv` - Matched data
+- `unmatched.csv` - Unmatched MI entries
+- `summary_stats.csv` - Summary statistics
+- `line_level.csv` - Per buyer-supplier pair details
 
 ---
 
@@ -119,4 +194,10 @@ The evaluation pipeline is designed so that once Azure OpenAI access is availabl
 - MLflow integrated
 - Prompt evaluation running
 - Unit tests implemented
-- Azure integration pending
+- DVC pipeline automated (dummy mode and mock live mode working)
+
+### If Pipeline Not Running, then
+
+1. Ensure DVC is initialized: `python -m dvc init`
+2. Check `params.yaml` has correct `data_mode` setting
+3. Verify all dependencies installed: `pip install -r requirements.txt`
