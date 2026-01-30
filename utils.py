@@ -121,8 +121,10 @@ def match_string_with_langchain(
       - EXACT candidate string (must match one element in list_of_strings) OR
       - "None"
     """
+    # remove input string from candidates if present
+    candidates = [i for i in list_of_strings if i != input_string]
     prompt_template = load_prompt(prompt_path)
-    candidates_json = json.dumps(list_of_strings, ensure_ascii=False)
+    candidates_json = json.dumps(candidates, ensure_ascii=False)
 
     # replace only the placeholders we own
     system_prompt = (
