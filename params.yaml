@@ -1,20 +1,2 @@
-data_mode: dummy  # Options: 'dummy' or 'live'
-
-paths:
-  dummy:
-    contracts: dummy_data/dummy_contracts.csv
-    mi: dummy_data/dummy_mi.csv
-    regno: dummy_data/dummy_reg_key_pairs.csv
-    combined: dummy_data/dummy_combined.csv
-    unmatched: dummy_data/dummy_unmatched_mi.csv
-    summary_stats: dummy_data/dummy_summary_stats.csv
-    line_level: dummy_data/dummy_line_level.csv
-  
-  live:
-    contracts: data/contracts.csv
-    mi: data/mi.csv
-    regno: data/reg_number_supplier_key.csv
-    combined: data/combined.csv
-    unmatched: data/unmatched.csv
-    summary_stats: data/summary_stats.csv
-    line_level: data/line_level.csv
+data_mode: dummy # Options: 'dummy' or 'live'
+force_erase_live: false #change to true, to erase live data

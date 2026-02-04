@@ -1,82 +1,39 @@
+# DVC Pipeline Definition
 stages:
-  download_data_dummy:
+  download_data:
     cmd: python scripts/download_data.py
     params:
       - data_mode
-      - paths.dummy
-    deps:
-      - scripts/download_data.py
-    outs:
-      - dummy_data/dummy_contracts.csv
-      - dummy_data/dummy_mi.csv
-      - dummy_data/dummy_reg_key_pairs.csv
-
-  download_data_live:
-    cmd: python scripts/download_data.py
-    params:
-      - data_mode
-      - paths.live
     deps:
       - scripts/download_data.py
     outs:
       - data/contracts.csv
       - data/mi.csv
-      - data/reg_number_supplier_key.csv
+      - data/reg_key_pairs.csv
 
-  combine_data_dummy:
+  combine_data:
     cmd: python scripts/combine_data.py
     params:
       - data_mode
-      - paths.dummy
-    deps:
-      - scripts/combine_data.py
-      - utils.py
-      - dummy_data/dummy_contracts.csv
-      - dummy_data/dummy_mi.csv
-      - dummy_data/dummy_reg_key_pairs.csv
-    outs:
-      - dummy_data/dummy_combined.csv
-      - dummy_data/dummy_unmatched_mi.csv
-
-  combine_data_live:
-    cmd: python scripts/combine_data.py
-    params:
-      - data_mode
-      - paths.live
     deps:
       - scripts/combine_data.py
       - utils.py
       - data/contracts.csv
       - data/mi.csv
-      - data/reg_number_supplier_key.csv
+      - data/reg_key_pairs.csv
     outs:
       - data/combined.csv
-      - data/unmatched.csv
+      - data/unmatched_mi.csv
 
-  summarise_data_dummy:
+  summarise_data:
     cmd: python scripts/summarise_data.py
     params:
       - data_mode
-      - paths.dummy
-    deps:
-      - scripts/summarise_data.py
-      - dummy_data/dummy_contracts.csv
-      - dummy_data/dummy_combined.csv
-      - dummy_data/dummy_unmatched_mi.csv
-    outs:
-      - dummy_data/dummy_summary_stats.csv
-      - dummy_data/dummy_line_level.csv
-
-  summarise_data_live:
-    cmd: python scripts/summarise_data.py
-    params:
-      - data_mode
-      - paths.live
     deps:
       - scripts/summarise_data.py
       - data/contracts.csv
       - data/combined.csv
-      - data/unmatched.csv
+      - data/unmatched_mi.csv
     outs:
       - data/summary_stats.csv
       - data/line_level.csv

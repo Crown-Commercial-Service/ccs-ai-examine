@@ -47,7 +47,7 @@ A core component of this repository focuses on **entity name matching** (buyer�
 
 ```
 CCS-AI-EXAMINE/
-├── data/
+├── benchmark_data/
 │   └── ccs_combined_buyer_supplier_benchmark.csv
 ├── evaluation/
 │   ├── evaluate_buyer_matching_mlflow.py
@@ -68,7 +68,6 @@ CCS-AI-EXAMINE/
 ├── mlflow_outputs/
 ├── params.yaml              # Pipeline configuration
 ├── dvc.yaml                 # Pipeline definition
-├── run_pipeline.py          # Pipeline execution script
 ├── utils.py
 ├── requirements.txt
 └── README.md
@@ -95,6 +94,8 @@ The DVC pipeline automates the revenue assurance workflow in three stages:
 2. **Combine Data**: Matches contracts with MI using LLM-based name matching
 3. **Summarize Data**: Generates statistics on matched/unmatched entries
 
+The pipeline uses a **single unified output folder** (`data/`) for both dummy and live modes, controlled by parameters in `params.yaml`.
+
 ### Pipeline Modes
 
 The pipeline supports two modes:
@@ -107,50 +108,82 @@ The pipeline supports two modes:
 
 #### 1. Configure Mode
 
-Edit `params.yaml` to set the mode:
+Configure the pipeline mode in `params.yaml`:
 
 ```yaml
-data_mode: dummy  # or 'live'
+data_mode: dummy          # Options: 'dummy' or 'live'
+force_erase_live: false   # Safety flag for Live data protection. Set true to enable the live data override
 ```
 
 #### 2. Run Pipeline
 
 ```bash
-python run_pipeline.py
-```
+# 1. Set mode in params.yaml
+data_mode: dummy  # or 'live'
 
-This automatically:
-- Reads the mode from `params.yaml`
-- Executes the appropriate pipeline stages
-- Generates outputs in `dummy_data/` or `data/` folder
+# 2. Run the pipeline
+python -m dvc repro
+```
+That's it! DVC will:
+- Read configuration from `params.yaml`
+- Determine which stages need to run
+- Execute stages in dependency order
+- Use cached results when nothing changed
+- Output all results to `data/` folder
 
 #### 3. View Pipeline DAG
 
 ```bash
-# View all stages
+# Force re-run all stages (ignore cache)
+python -m dvc repro --force
+
+# Force re-run from specific stage onwards
+python -m dvc repro --force download_data
+
+# View pipeline structure
 python -m dvc dag
 
-# View specific mode
-python -m dvc dag download_data_dummy combine_data_dummy summarise_data_dummy
+# Check what will run without executing
+python -m dvc status
+
+# View pipeline metrics
+python -m dvc metrics show
 ```
+### Pipeline Safety Mechanisms
+
+The pipeline includes **production-grade safety checks** to prevent accidental data loss:
+
+#### Stamp File Protection
+
+When live data is downloaded, a hidden file `.is_live` is created in the `data/` folder to mark it as containing production data.
+
+**Safety Rules:**
+
+1. **Live → Dummy Switch**: Blocked unless `force_erase_live: true`
+   ```
+   CRITICAL: 'data/' folder currently contains LIVE DATA.
+   Running DUMMY will erase LIVE data.
+   ACTION REQUIRED: Set 'force_erase_live: true' in params.yaml
+   ```
+2. **Live → Live Re-run**: Also requires `force_erase_live: true`
+   ```
+   CRITICAL: 'data/' folder currently contains LIVE DATA.
+   Re-running LIVE will overwrite existing LIVE data.
+   ACTION REQUIRED: Set 'force_erase_live: true' in params.yaml
+   ```
+3. **Dummy → Dummy/live**: No restrictions, runs freely
 
 ### Pipeline Outputs
 
+All outputs are saved to the **unified `data/` folder** regardless of mode:
 **Dummy Mode** (`dummy_data/`):
-- `dummy_contracts.csv` - Test contract data
-- `dummy_mi.csv` - Test MI data
-- `dummy_combined.csv` - Matched data
-- `dummy_unmatched_mi.csv` - Unmatched MI entries
-- `dummy_summary_stats.csv` - Summary statistics
-- `dummy_line_level.csv` - Per buyer-supplier pair details
-
-**Live Mode** (`data/`):
-- `contracts.csv` - Real contract data
-- `mi.csv` - Real MI data
+- `contracts.csv` - contract data
+- `mi.csv` - Management Information data
 - `combined.csv` - Matched data
 - `unmatched.csv` - Unmatched MI entries
 - `summary_stats.csv` - Summary statistics
 - `line_level.csv` - Per buyer-supplier pair details
+- `.is_live` - Stamp file (only present when folder contains live data not for dummy data) 
 
 ---
 
@@ -194,10 +227,11 @@ The evaluation pipeline is designed so that once Azure OpenAI access is availabl
 - MLflow integrated
 - Prompt evaluation running
 - Unit tests implemented
-- DVC pipeline automated (dummy mode and mock live mode working)
+- DVC pipeline automation (3 stages)
+- Production-grade safety mechanisms
 
 ### If Pipeline Not Running, then
 
 1. Ensure DVC is initialized: `python -m dvc init`
-2. Check `params.yaml` has correct `data_mode` setting
+2. Check `params.yaml` has correct `data_mode` setting also check the force_erase_live to override the Live data
 3. Verify all dependencies installed: `pip install -r requirements.txt`
