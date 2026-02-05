@@ -80,7 +80,8 @@ conn = engine.connect()
 
 MI_query = f"""
         SELECT SupplierName,SupplierKey,CustomerName,[Group],FinancialYear,FinancialMonth,EvidencedSpend FROM dbo.AggregatedSpendReporting
-        WHERE FrameworkName LIKE 'G-Cloud 1%'
+        WHERE FrameworkName LIKE 'G-Cloud 1%' AND CustomerName != 'Supplier Nil Return'
+
     """
 GCloud_MI = pd.read_sql(MI_query, conn)
 GCloud_MI = GCloud_MI.rename(columns={'Group':'CustomerGroup'})
