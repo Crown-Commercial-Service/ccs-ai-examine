@@ -4,7 +4,8 @@ import sys
 from dotenv import load_dotenv
 from langchain_openai import AzureChatOpenAI
 # Keep your existing import
-from utils import batch_match_string_with_langchain
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from utils import match_string_with_langchain
 
 
 def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
@@ -56,10 +57,18 @@ def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
     if model and not unmatched_mi.is_empty():
         unique_unmatched_customers = unmatched_mi["CustomerName"].unique().to_list()
         choices = buyer_names_from_contracts.to_list()
-        matched_names = batch_match_string_with_langchain(unique_unmatched_customers, choices, model)
+        ai_matches = []
+        count = 0
+        number_of_names_to_match = len(unique_unmatched_customers)
+        for i in unique_unmatched_customers:
+            matched_name = match_string_with_langchain(i, choices, model, prompt_path="prompts/buyer_match_v2.txt")
+            ai_matches.append(matched_name)
+            count += 1
+            if count % 10 == 0:
+                print(f"Processed {count} / {number_of_names_to_match} names")
         name_map_df = pl.DataFrame({
             "CustomerName": unique_unmatched_customers,
-            "AIMatchedName": matched_names
+            "AIMatchedName": ai_matches
         })
 
         unmatched_mi = unmatched_mi.join(name_map_df, on="CustomerName", how="left")
@@ -92,26 +101,25 @@ if __name__ == "__main__":
         azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
         openai_api_key=os.getenv("AZURE_OPENAI_KEY"),
         azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
-        openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
-        temperature=0.00000001
+        openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION")
     )
 
-    # # run this block for live data
-    # combined, unmatched = combine_data(
-    #     contracts_data="data/contracts.csv",
-    #     mi_data="data/mi.csv",
-    #     regno_key_pairs="data/reg_number_supplier_key.csv",
-    #     model=model
-    # )
-    # combined.to_csv("data/combined.csv", index=False)
-    # unmatched.to_csv("data/unmatched.csv", index=False)
-
-    # run this block for testing
+    # run this block for live data
     combined, unmatched = combine_data(
-        contracts_data="dummy_data/dummy_contracts.csv",
-        mi_data="dummy_data/dummy_mi.csv",
-        regno_key_pairs="dummy_data/dummy_reg_key_pairs.csv",
+        contracts_data="data/contracts.csv",
+        mi_data="data/mi.csv",
+        regno_key_pairs="data/reg_number_supplier_key.csv",
         model=model
     )
-    combined.write_csv("dummy_data/dummy_combined_optimised.csv")
-    unmatched.write_csv("dummy_data/dummy_unmatched_mi_optimised.csv")
+    combined.to_csv("data/combined.csv", index=False)
+    unmatched.to_csv("data/unmatched.csv", index=False)
+
+    # # run this block for testing
+    # combined, unmatched = combine_data(
+    #     contracts_data="dummy_data/dummy_contracts.csv",
+    #     mi_data="dummy_data/dummy_mi.csv",
+    #     regno_key_pairs="dummy_data/dummy_reg_key_pairs.csv",
+    #     model=model
+    # )
+    # combined.write_csv("dummy_data/dummy_combined_optimised.csv")
+    # unmatched.write_csv("dummy_data/dummy_unmatched_mi_optimised.csv")
