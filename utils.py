@@ -73,6 +73,7 @@ def match_string_with_langchain(
             # If the LLM returns "None", a hallucination, or a typo, we treat it as no match
             # You can optionally print a warning here to see what it hallucinated
             print(f"Rejected LLM Output: '{content}' (not in candidate list)")
+            return "None"
 
     except BadRequestError as e:
         # Catch the specific error, log it, and return a safe fallback
@@ -82,3 +83,4 @@ def match_string_with_langchain(
     except Exception as e:
         # Optional: Catch other unexpected errors (e.g., RateLimitError)
         print(f"An unexpected error occurred for '{input_string}': {e}")
+        return "None"
