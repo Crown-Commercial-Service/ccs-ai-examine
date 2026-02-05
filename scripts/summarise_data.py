@@ -3,7 +3,7 @@ import pandas as pd
 # read in data and make sure that column types are correct
 contracts = pd.read_csv("data/contracts.csv", low_memory=False)
 matched = pd.read_csv(
-    "data/combined_with_CustomerGroup.csv",
+    "data/combined.csv",
     low_memory=False
 )
 matched['contract_start'] = pd.to_datetime(matched['contract_start'])
@@ -69,4 +69,4 @@ print(summary_stats_df)
 summary_stats_df.to_csv("data/summary_stats.csv", index=False)
 
 # line-level data output
-reported_spend_per_pair.to_csv("data/line_level_with_CustomerGroup.csv", index=False)
+reported_spend_per_pair.to_csv("data/line_level.csv", index=False)

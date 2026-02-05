@@ -24,74 +24,6 @@ class TqdmCallbackHandler(BaseCallbackHandler):
         """Handle error if needed, maybe close the progress bar."""
         self.pbar.close()
 
-def batch_match_string_with_langchain(input_strings: List[str], list_of_strings: List[str], model, tpm_limit: int = 60000, chunk_size: int = 10) -> List[str]:
-    """
-    Matches a list of input strings to one of a list of strings using a LangChain model in a batch,
-    with rate limiting to respect TPM limits.
-
-    Args:
-        input_strings: The list of strings to match.
-        list_of_strings: A list of strings to match against.
-        model: The LangChain model object (e.g., a ChatOpenAI instance).
-        tpm_limit: The tokens-per-minute limit of the model.
-        chunk_size: The number of requests to send in each chunk.
-
-    Returns:
-        A list of the model's response contents.
-    """
-    system_prompt = f"""
-    Match the input string to one of these : {list_of_strings}. If you can't find a match, return 'None'.
-    """
-    
-    messages = [
-        [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=input_string),
-        ]
-        for input_string in input_strings
-    ]
-
-    results = []
-    tokens_sent_in_window = 0
-    window_start_time = time.time()
-    encoding = tiktoken.get_encoding("cl100k_base")
-
-    for i in range(0, len(messages), chunk_size):
-        chunk = messages[i:i+chunk_size]
-        
-        # Estimate token count for the chunk
-        token_count = 0
-        for message_list in chunk:
-            for message in message_list:
-                token_count += len(encoding.encode(message.content))
-
-        # Check if this chunk would exceed the TPM limit
-        if tokens_sent_in_window + token_count > tpm_limit:
-            time_to_wait = 30 - (time.time() - window_start_time)
-            if time_to_wait > 0:
-                print(f"TPM limit likely to be exceeded. Waiting for {time_to_wait:.2f} seconds.")
-                time.sleep(time_to_wait)
-            
-            # Reset window
-            window_start_time = time.time()
-            tokens_sent_in_window = 0
-        
-        num_requests = len(chunk)
-        tqdm_callback = TqdmCallbackHandler(total=num_requests)
-        
-        responses = model.batch(
-            chunk, 
-            config={"callbacks": [tqdm_callback]}
-        )
-        results.extend([r.content for r in responses])
-        
-        tokens_sent_in_window += token_count
-
-    print(f"Got {len(results)} responses.")
-    return results
-
-
-
 def load_prompt(prompt_path: str) -> str:
     """
     Loads a prompt template from a file.
@@ -111,9 +43,10 @@ def match_string_with_langchain(
     Match an input string to one of a list of candidate strings using a LangChain-style model.
     Handles BadRequestError by returning "None".
     """
-    # Load template (assuming load_prompt is defined elsewhere)
+    # remove input string from candidates if present
+    candidates = [i for i in list_of_strings if i != input_string]
     prompt_template = load_prompt(prompt_path)
-    candidates_json = json.dumps(list_of_strings, ensure_ascii=False)
+    candidates_json = json.dumps(candidates, ensure_ascii=False)
 
     # Replace placeholders
     system_prompt = (
@@ -126,15 +59,20 @@ def match_string_with_langchain(
         SystemMessage(content=system_prompt),
         HumanMessage(content=str(input_string)),
     ]
-    
-    print(f"Matching name {input_string}")
 
+    print(f"Matching name {input_string}")
     try:
         # Attempt to invoke the model
         response = model.invoke(messages)
-        content = getattr(response, "content", "")
-        print(f"Match = {content}")
-        return (content or "").strip()
+        content = getattr(response, "content", "").strip()
+        # Only accept the result if it is an EXACT match in our candidate list
+        if content in list_of_strings or content == "None":
+            print(f"Result = {content}")
+            return content
+        else:
+            # If the LLM returns "None", a hallucination, or a typo, we treat it as no match
+            # You can optionally print a warning here to see what it hallucinated
+            print(f"Rejected LLM Output: '{content}' (not in candidate list)")
 
     except BadRequestError as e:
         # Catch the specific error, log it, and return a safe fallback
@@ -144,4 +82,3 @@ def match_string_with_langchain(
     except Exception as e:
         # Optional: Catch other unexpected errors (e.g., RateLimitError)
         print(f"An unexpected error occurred for '{input_string}': {e}")
-        return "None"

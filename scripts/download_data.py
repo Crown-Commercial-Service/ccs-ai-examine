@@ -78,15 +78,12 @@ conn_string = '{}://{}:{}@{}:{}/{}?driver={}'.format(
 engine = create_engine(conn_string)
 conn = engine.connect()
 
-GCloud_MI = pd.DataFrame(columns = ['SupplierName','SupplierKey','CustomerName','FinancialYear','FinancialMonth','EvidencedSpend'])
-for i in ['MI_RM155710', 'MI_RM155711', 'MI_RM155712', 'MI_RM155713', 'MI_RM155713L4', 'MI_RM155714', 'MI_RM155714L4']:
-    # find MI data for GCloud iteration
-    MI_query = f"""
-        SELECT SupplierName,SupplierKey,CustomerName,FinancialYear,FinancialMonth,EvidencedSpend FROM mi.{i}
+MI_query = f"""
+        SELECT SupplierName,SupplierKey,CustomerName,[Group],FinancialYear,FinancialMonth,EvidencedSpend FROM dbo.AggregatedSpendReporting
+        WHERE FrameworkName LIKE 'G-Cloud 1%'
     """
-    MI_entries = pd.read_sql(MI_query, conn)
-    # add it to the aggregated df
-    GCloud_MI = pd.concat([GCloud_MI, MI_entries], axis=0)
+GCloud_MI = pd.read_sql(MI_query, conn)
+GCloud_MI = GCloud_MI.rename(columns={'Group':'CustomerGroup'})
 print("MI parsed")
 
 # Save MI entries to CSV
