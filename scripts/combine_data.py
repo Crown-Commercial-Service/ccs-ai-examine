@@ -63,6 +63,9 @@ def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
             if count % 50 == 0:
                 print(f"Matched {count} / {len(unique_unmatched_customers)}")
         unmatched_mi['AIMatchedName'] = unmatched_mi['CustomerName'].map(name_map)
+        # keep AI name matches for later reference
+        name_map_df = pd.DataFrame(list(name_map.items()), columns = ['Original Name', 'AI Match'])
+        name_map_df.to_csv('dummy_data/AI_name_matches.csv', index=False)
         # Ensure SupplierKey is treated as an integer string, to avoid mismatches due to float representations (e.g. '123.0' vs '123')
         unmatched_mi['PairID'] = unmatched_mi['SupplierKey'].astype('Int64').astype(str) + '+' + unmatched_mi['AIMatchedName'].str.lower()
         # join unmatched MI onto contracts
