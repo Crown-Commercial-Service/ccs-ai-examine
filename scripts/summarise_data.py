@@ -1,9 +1,18 @@
 import pandas as pd
+import argparse
+import os
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--indir", required=True)
+parser.add_argument("--outdir", required=True)
+args = parser.parse_args()
+
+os.makedirs(args.outdir, exist_ok=True)
 
 # read in data and make sure that column types are correct
-contracts = pd.read_csv("data/contracts.csv", low_memory=False)
+contracts = pd.read_csv(os.path.join(args.indir, "contracts.csv"), low_memory=False)
 matched = pd.read_csv(
-    "data/combined.csv",
+    os.path.join(args.indir, "combined.csv"),
     low_memory=False
 )
 matched['contract_start'] = pd.to_datetime(matched['contract_start'])
@@ -17,7 +26,7 @@ matched = matched.rename(columns={
     'contract_months': 'Contract Duration (Months)',
     'CustomerGroup': 'Customer Group'
 })
-unmatched = pd.read_csv("data/unmatched.csv", low_memory=False)
+unmatched = pd.read_csv(os.path.join(args.indir, "unmatched.csv"), low_memory=False)
 # For each buyer-supplier pair, find the most recent contract (or contracts, if they share the same start date)
 matched['MostRecentStartDate'] = matched.groupby(['Contracting Authority', 'Supplier'])['Contract Start Date'].transform('max')
 recent_contracts_only = matched[matched['Contract Start Date'] == matched['MostRecentStartDate']]
@@ -66,7 +75,7 @@ summary_stats = {
 }
 summary_stats_df = pd.DataFrame(summary_stats)
 print(summary_stats_df)
-summary_stats_df.to_csv("data/summary_stats.csv", index=False)
+summary_stats_df.to_csv(os.path.join(args.outdir, "summary_stats.csv"), index=False)
 
 # line-level data output
-reported_spend_per_pair.to_csv("data/line_level.csv", index=False)
+reported_spend_per_pair.to_csv(os.path.join(args.outdir, "line_level.csv"), index=False)

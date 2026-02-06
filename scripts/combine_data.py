@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import sys
+import argparse
 from dotenv import load_dotenv
 from langchain_openai import AzureChatOpenAI
 
@@ -84,33 +85,18 @@ if __name__ == "__main__":
         azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
         openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION")
     )
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--indir", required=True)
+    parser.add_argument("--outdir", required=True)
+    args = parser.parse_args()
 
-    # run this block for live data
+    os.makedirs(args.outdir, exist_ok=True)
+
     combined, unmatched = combine_data(
-        contracts_data="data/contracts.csv",
-        mi_data="data/mi.csv",
-        regno_key_pairs="data/reg_number_supplier_key.csv",
+        contracts_data=os.path.join(args.indir, "contracts.csv"),
+        mi_data=os.path.join(args.indir, "mi.csv"),
+        regno_key_pairs=os.path.join(args.indir, "reg_number_supplier_key.csv"),
         model=model
     )
-    combined.to_csv("data/combined.csv", index=False)
-    unmatched.to_csv("data/unmatched.csv", index=False)
-
-    # # run this block for testing
-    # combined, unmatched = combine_data(
-    #     contracts_data="dummy_data/dummy_contracts.csv",
-    #     mi_data="dummy_data/dummy_mi.csv",
-    #     regno_key_pairs="dummy_data/dummy_reg_key_pairs.csv",
-    #     model=model
-    # )
-    # combined.to_csv("dummy_data/dummy_combined.csv", index=False)
-    # unmatched.to_csv("dummy_data/dummy_unmatched_mi.csv", index=False)
-
-    # # run this block for debugging of isolated cases
-    # combined, unmatched = combine_data(
-    #     contracts_data="debugging/contracts.csv",
-    #     mi_data="debugging/mi.csv",
-    #     regno_key_pairs="debugging/reg_number_supplier_key.csv",
-    #     model=model
-    # )
-    # combined.to_csv("debugging/combined.csv", index=False)
-    # unmatched.to_csv("debugging/unmatched_mi.csv", index=False)
+    combined.to_csv(os.path.join(args.outdir, "combined.csv"), index=False)
+    unmatched.to_csv(os.path.join(args.outdir, "unmatched.csv"), index=False)
