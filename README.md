@@ -79,6 +79,16 @@ CCS-AI-EXAMINE/
 
 ---
 
+## Running the Data Pipeline
+
+When running on MacOS, the pipeline can be killed by system sleep settings, which suspend the python process and cause the script to hang. To avoid this, wrap the call to the pipeline script in caffeinate:
+
+```bash
+caffeinate -i python scripts/combine_data.py
+```
+
+Note: when DVC is implemented, the call to DVC can be preceded by `caffeinate -i` to prevent the pipeline hanging.
+
 ## Running the Evaluation
 
 ```bash
