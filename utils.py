@@ -45,7 +45,8 @@ def match_string_with_langchain(
     Handles BadRequestError by returning "None".
     """
     # remove input string from candidates if present
-    candidates = [i for i in list_of_strings if i != input_string]
+    input_string = input_string.strip()
+    candidates = [i.strip() for i in list_of_strings if i != input_string]
     prompt_template = load_prompt(prompt_path)
     candidates_json = json.dumps(candidates, ensure_ascii=False)
 
