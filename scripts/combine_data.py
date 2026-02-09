@@ -2,20 +2,18 @@ import pandas as pd
 import os
 import sys
 from dotenv import load_dotenv
-from langchain_openai import AzureChatOpenAI
 
 # Add the parent directory to the path so that we can import from 'utils'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from utils import match_string_with_langchain
+from utils import match_string_via_api
 
 
-def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
+def combine_data(contracts_data, mi_data, regno_key_pairs):
     """Combines contracts data with MI data
     Args:
         contracts_data: path to the contracts data CSV file
         mi_data: path to the MI data CSV file
         regno_key_pairs: path to the registration number - supplier key CSV file
-        model: optional LangChain model for fuzzy matching
     """
     if os.path.exists(contracts_data):
         contracts = pd.read_csv(contracts_data, dtype={'SupplierCompanyRegistrationNumber': str})
@@ -31,7 +29,7 @@ def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
         regno_keys["SupplierKey"] = regno_keys["SupplierKey"].astype("Int64")
     else:
         raise Exception(f"Registration number - supplier key data file {regno_key_pairs} does not exist")
-    
+
     # add supplier key onto contracts df
     contracts = contracts.merge(regno_keys, on="SupplierCompanyRegistrationNumber", how="inner")
     # add a unique reference value called "PairID" to each row of contracts and MI by concatenating the names of the buyer and supplier
@@ -52,12 +50,18 @@ def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
     # focus on Situation 2
     unmatched_mi = unmatched_mi_all[~unmatched_mi_all['CustomerName'].isin(mi_buyer_names_to_ignore)].copy()
 
-    if model and not unmatched_mi.empty:
+    # Matching is handled by the external API.
+    # Set MATCH_STRING_API_URL to your external `GET /match` endpoint.
+    if not unmatched_mi.empty:
         unique_unmatched_customers = unmatched_mi['CustomerName'].unique().tolist()
         name_map = {}
         count = 0
         for i in unique_unmatched_customers:
-            name_match = match_string_with_langchain(i, buyer_names_from_contracts, model, './prompts/buyer_match_v2.txt')
+            name_match = match_string_via_api(
+                input_string=i,
+                list_of_strings=buyer_names_from_contracts,
+                prompt_path='./prompts/buyer_match_v2.txt',
+            )
             name_map[i] = name_match
             count += 1
             if count % 50 == 0:
@@ -67,7 +71,7 @@ def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
         unmatched_mi['PairID'] = unmatched_mi['SupplierKey'].astype('Int64').astype(str) + '+' + unmatched_mi['AIMatchedName'].str.lower()
         # join unmatched MI onto contracts
         contracts_with_mi_AI = contracts.merge(unmatched_mi, on="PairID", how="left")
-        
+
         contracts_with_mi = pd.concat([contracts_with_mi, contracts_with_mi_AI])
         matched_pair_ids = mi['PairID'].isin(contracts_with_mi['PairID'])
         unmatched_mi = mi[~matched_pair_ids]
@@ -78,19 +82,11 @@ if __name__ == "__main__":
 
     load_dotenv()
 
-    model = AzureChatOpenAI(
-        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-        openai_api_key=os.getenv("AZURE_OPENAI_KEY"),
-        azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
-        openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION")
-    )
-
     # run this block for live data
     combined, unmatched = combine_data(
         contracts_data="data/contracts.csv",
         mi_data="data/mi.csv",
         regno_key_pairs="data/reg_number_supplier_key.csv",
-        model=model
     )
     combined.to_csv("data/combined.csv", index=False)
     unmatched.to_csv("data/unmatched.csv", index=False)
@@ -100,7 +96,6 @@ if __name__ == "__main__":
     #     contracts_data="dummy_data/dummy_contracts.csv",
     #     mi_data="dummy_data/dummy_mi.csv",
     #     regno_key_pairs="dummy_data/dummy_reg_key_pairs.csv",
-    #     model=model
     # )
     # combined.to_csv("dummy_data/dummy_combined.csv", index=False)
     # unmatched.to_csv("dummy_data/dummy_unmatched_mi.csv", index=False)
@@ -110,7 +105,6 @@ if __name__ == "__main__":
     #     contracts_data="debugging/contracts.csv",
     #     mi_data="debugging/mi.csv",
     #     regno_key_pairs="debugging/reg_number_supplier_key.csv",
-    #     model=model
     # )
     # combined.to_csv("debugging/combined.csv", index=False)
     # unmatched.to_csv("debugging/unmatched_mi.csv", index=False)
