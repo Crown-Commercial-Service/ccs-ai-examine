@@ -27,6 +27,14 @@ To set up the Python virtual environment, follow these steps:
     pip install -r requirements.txt
     ```
 
+### Environment variables
+
+Create a local `.env` file (not committed) based on `env.example`:
+
+```bash
+cp env.example .env
+```
+
 ### SQL Drivers
 
 To install the SQL drivers, run the `install_drivers.sh` script:
@@ -83,6 +91,24 @@ CCS-AI-EXAMINE/
 
 ```bash
 python -m evaluation.evaluate_buyer_matching_mlflow
+```
+
+### Matching API (required)
+
+Entity name matching is performed via an **external API** (rather than calling `match_string_with_langchain` locally).
+
+- **Set**: `MATCH_STRING_API_URL` to the full URL of the external matcher endpoint.
+- **Endpoint**: expects a `GET /match` route with query params:
+  - `input_string` (string)
+  - `candidates` (repeat this param once per candidate)
+  - `prompt_path` (optional)
+- **Response**: JSON like:
+  - `{"input_string": "...", "match": "<candidate>|null", "raw": "..."}`
+
+Example:
+
+```bash
+export MATCH_STRING_API_URL="http://localhost:8000/match"
 ```
 
 ---
