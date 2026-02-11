@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import random
 import os
 
 def generate_dummy_contracts_data():

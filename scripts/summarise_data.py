@@ -40,12 +40,12 @@ reported_spend_per_pair = recent_contracts_only.groupby(['Contracting Authority'
 # add a column of the number of months between each start date and the present day
 now = pd.Timestamp.now().normalize()
 reported_spend_per_pair['Total Months Run So Far'] = (
-    (now.year - reported_spend_per_pair['Contract Start Date'].dt.year) * 12 + 
+    (now.year - reported_spend_per_pair['Contract Start Date'].dt.year) * 12 +
     (now.month - reported_spend_per_pair['Contract Start Date'].dt.month)
 )
 # find expired contracts
 reported_spend_per_pair['Expired'] = reported_spend_per_pair['Contract End Date'] < now
-expired_contracts = reported_spend_per_pair[reported_spend_per_pair['Expired']==True].copy()
+expired_contracts = reported_spend_per_pair[reported_spend_per_pair['Expired']].copy()
 
 # summary stats
 total_contracts = len(contracts)
@@ -56,7 +56,7 @@ unique_unmatched_buyers = len(unmatched['CustomerName'].unique())
 total_contracts_with_spend = len(reported_spend_per_pair[reported_spend_per_pair['EvidencedSpend']>0.0])
 red_filter = expired_contracts['EvidencedSpend']==0.0
 no_spend_expired = len(expired_contracts[red_filter])
-amber_filter = (reported_spend_per_pair['Expired']==False) & (reported_spend_per_pair['Total Months Run So Far']>3) & (reported_spend_per_pair['EvidencedSpend']==0.0)
+amber_filter = (~reported_spend_per_pair['Expired']) & (reported_spend_per_pair['Total Months Run So Far']>3) & (reported_spend_per_pair['EvidencedSpend']==0.0)
 no_spend_3month_run = len(reported_spend_per_pair[amber_filter])
 summary_stats = {
     "Summary Statistic": ["Total Contracts", "Total Contracts with Supplier Key", "Unmatched MI Entries", "Unique Unmatched Suppliers", "Unique Unmatched Buyers",

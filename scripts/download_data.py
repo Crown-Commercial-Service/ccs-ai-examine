@@ -78,7 +78,7 @@ conn_string = '{}://{}:{}@{}:{}/{}?driver={}'.format(
 engine = create_engine(conn_string)
 conn = engine.connect()
 
-MI_query = f"""
+MI_query = """
         SELECT SupplierName,SupplierKey,CustomerName,[Group],FinancialYear,FinancialMonth,EvidencedSpend FROM dbo.AggregatedSpendReporting
         WHERE FrameworkName LIKE 'G-Cloud 1%'
     """

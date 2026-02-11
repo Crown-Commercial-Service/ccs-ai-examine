@@ -95,7 +95,7 @@ python -m evaluation.evaluate_buyer_matching_mlflow
 
 ### Matching API (required)
 
-Entity name matching is performed via an **external API** (rather than calling `match_string_with_langchain` locally).
+Entity name matching is performed via an **external API**.
 
 - **Set**: `MATCH_STRING_API_URL` to the full URL of the external matcher endpoint.
 - **Endpoint**: expects a `GET /match` route with query params:
