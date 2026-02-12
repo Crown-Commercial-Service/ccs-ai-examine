@@ -2,37 +2,13 @@ from __future__ import annotations
 
 import os
 import json
-from pathlib import Path
 from typing import List, Any, Optional, Dict, Tuple
 
 import urllib.parse
 import urllib.request
 import urllib.error
 
-from tqdm import tqdm
-from langchain_core.callbacks.base import BaseCallbackHandler
-
-class TqdmCallbackHandler(BaseCallbackHandler):
-    """Callback handler for tqdm progress bar."""
-    def __init__(self, total: int):
-        self.pbar = tqdm(total=total, desc="Batch matching strings")
-
-    def on_llm_end(self, response, **kwargs):
-        """Update progress bar on LLM end."""
-        self.pbar.update(1)
-
-    def on_llm_error(self, error: Exception, **kwargs):
-        """Handle error if needed, maybe close the progress bar."""
-        self.pbar.close()
-
-def load_prompt(prompt_path: str) -> str:
-    """
-    Loads a prompt template from a file.
-    """
-    p = Path(prompt_path)
-    if not p.exists():
-        raise FileNotFoundError(f"Prompt file not found: {prompt_path}")
-    return p.read_text(encoding="utf-8")
+"""Utilities for calling the external matching API."""
 
 def _http_get(url: str, timeout_s: float = 60.0) -> Tuple[int, str]:
     """
@@ -73,7 +49,7 @@ def match_string_via_api(
     Expected response body:
       { "input_string": "...", "match": "<candidate>|null", "raw": "..." }
 
-    Return contract (to mirror match_string_with_langchain):
+    Return contract:
       - EXACT candidate string (must match one element in list_of_strings) OR
       - "None"
 

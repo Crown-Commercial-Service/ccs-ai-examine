@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from datetime import datetime
 from typing import Dict, Any, List
 import random
 import pandas as pd
 import hashlib
 import yaml
 import mlflow
-mlflow.set_tracking_uri("file:./mlruns")
 
 from utils import match_string_via_api
 from evaluation.mock_langchain_model import MockChatModelWithCandidates  # noqa: F401
+
+mlflow.set_tracking_uri("file:./mlruns")
 
 # Optional: fallback mock model
 class _MockResponse:
