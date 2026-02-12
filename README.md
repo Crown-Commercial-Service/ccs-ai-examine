@@ -133,6 +133,60 @@ python -m pytest -q
 
 ---
 
+## Developer Tooling (Pre-commit, Ruff, pytest)
+
+This project uses:
+
+- [pre-commit](https://pre-commit.com/) for running checks automatically before each commit.
+- [Ruff](https://docs.astral.sh/ruff/) for fast linting.
+- [pytest](https://docs.pytest.org/) for unit testing.
+
+### Install tooling
+
+If you already installed dependencies from `requirements.txt`, install the remaining developer tools:
+
+```bash
+python -m pip install pre-commit ruff
+```
+
+Or install all at once:
+
+```bash
+python -m pip install -r requirements.txt pre-commit ruff
+```
+
+### Set up pre-commit hooks
+
+Install hooks locally:
+
+```bash
+pre-commit install
+```
+
+Run all hooks manually across the repository:
+
+```bash
+pre-commit run --all-files
+```
+
+### Run Ruff and pytest manually
+
+Run Ruff:
+
+```bash
+ruff check .
+```
+
+Run tests:
+
+```bash
+pytest -q
+```
+
+CI also runs Ruff and pytest on every push.
+
+---
+
 ## Azure Readiness
 
 The evaluation pipeline is designed so that once Azure OpenAI access is available, the mock LLM can be replaced with a real Azure client with minimal changes.
