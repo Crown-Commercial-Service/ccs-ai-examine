@@ -1,25 +1,21 @@
 import pandas as pd
 import os
-import sys
 import argparse
 from dotenv import load_dotenv
-from langchain_openai import AzureChatOpenAI
-
-# Add the parent directory to the path so that we can import from 'utils'
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from utils import match_string_with_langchain
+from utils import match_string_via_api
 
 
-def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
+def combine_data(contracts_data, mi_data, regno_key_pairs):
     """Combines contracts data with MI data
     Args:
         contracts_data: path to the contracts data CSV file
         mi_data: path to the MI data CSV file
         regno_key_pairs: path to the registration number - supplier key CSV file
-        model: optional LangChain model for fuzzy matching
     """
     if os.path.exists(contracts_data):
-        contracts = pd.read_csv(contracts_data, dtype={'SupplierCompanyRegistrationNumber': str})
+        contracts = pd.read_csv(
+            contracts_data, dtype={"SupplierCompanyRegistrationNumber": str}
+        )
     else:
         raise Exception(f"Contracts data file {contracts_data} does not exist")
     if os.path.exists(mi_data):
@@ -28,63 +24,80 @@ def combine_data(contracts_data, mi_data, regno_key_pairs, model=None):
     else:
         raise Exception(f"MI data file {mi_data} does not exist")
     if os.path.exists(regno_key_pairs):
-        regno_keys = pd.read_csv(regno_key_pairs, dtype={'SupplierCompanyRegistrationNumber': str})
+        regno_keys = pd.read_csv(
+            regno_key_pairs, dtype={"SupplierCompanyRegistrationNumber": str}
+        )
         regno_keys["SupplierKey"] = regno_keys["SupplierKey"].astype("Int64")
     else:
-        raise Exception(f"Registration number - supplier key data file {regno_key_pairs} does not exist")
-    
+        raise Exception(
+            f"Registration number - supplier key data file {regno_key_pairs} does not exist"
+        )
+
     # add supplier key onto contracts df
-    contracts = contracts.merge(regno_keys, on="SupplierCompanyRegistrationNumber", how="inner")
+    contracts = contracts.merge(
+        regno_keys, on="SupplierCompanyRegistrationNumber", how="inner"
+    )
     # add a unique reference value called "PairID" to each row of contracts and MI by concatenating the names of the buyer and supplier
     # lowercase the buyer names to avoid case differences throwing off the join
-    contracts['PairID'] = contracts['SupplierKey'].astype(str) + '+' + contracts['buyer'].str.lower()
-    mi['PairID'] = mi['SupplierKey'].astype(str) + '+' + mi['CustomerName'].str.lower()
+    contracts["PairID"] = (
+        contracts["SupplierKey"].astype(str) + "+" + contracts["buyer"].str.lower()
+    )
+    mi["PairID"] = mi["SupplierKey"].astype(str) + "+" + mi["CustomerName"].str.lower()
     # join MI onto contracts
     contracts_with_mi = contracts.merge(mi, on="PairID", how="left")
-    matched_pair_ids = mi['PairID'].isin(contracts_with_mi['PairID'])
+    matched_pair_ids = mi["PairID"].isin(contracts_with_mi["PairID"])
     # find the unmatched MI, which may be because
     # Situation 1. the buyer name in the MI matches to one in the contract data, and there is simply no contract with a supplier
     # Situation 2. the buyer name in the MI doesn't match to one in the contract data, and we need an LLM to find a match
     # we can safely ignore Situation 1: if the name matches, we would already have caught it in the initial join, and all the LLM will return is its input
     unmatched_mi_all = mi[~matched_pair_ids]
     # ignore Situation 1
-    buyer_names_from_contracts = contracts['buyer'].unique().tolist()
-    mi_buyer_names_to_ignore = unmatched_mi_all[unmatched_mi_all['CustomerName'].isin(buyer_names_from_contracts)]['CustomerName']
+    buyer_names_from_contracts = contracts["buyer"].unique().tolist()
+    mi_buyer_names_to_ignore = unmatched_mi_all[
+        unmatched_mi_all["CustomerName"].isin(buyer_names_from_contracts)
+    ]["CustomerName"]
     # focus on Situation 2
-    unmatched_mi = unmatched_mi_all[~unmatched_mi_all['CustomerName'].isin(mi_buyer_names_to_ignore)].copy()
+    unmatched_mi = unmatched_mi_all[
+        ~unmatched_mi_all["CustomerName"].isin(mi_buyer_names_to_ignore)
+    ].copy()
 
-    if model and not unmatched_mi.empty:
-        unique_unmatched_customers = unmatched_mi['CustomerName'].unique().tolist()
+    # Matching is handled by the external API.
+    # Set MATCH_STRING_API_URL to your external `GET /match` endpoint.
+    if not unmatched_mi.empty:
+        unique_unmatched_customers = unmatched_mi["CustomerName"].unique().tolist()
         name_map = {}
         count = 0
         for i in unique_unmatched_customers:
-            name_match = match_string_with_langchain(i, buyer_names_from_contracts, model, './prompts/buyer_match_v2.txt')
+            name_match = match_string_via_api(
+                input_string=i,
+                list_of_strings=buyer_names_from_contracts,
+                prompt_path="./prompts/buyer_match_v2.txt",
+                api_url=os.getenv("NAME_MATCH_API_ENDPOINT"),
+            )
             name_map[i] = name_match
             count += 1
             if count % 50 == 0:
                 print(f"Matched {count} / {len(unique_unmatched_customers)}")
-        unmatched_mi['AIMatchedName'] = unmatched_mi['CustomerName'].map(name_map)
+        unmatched_mi["AIMatchedName"] = unmatched_mi["CustomerName"].map(name_map)
         # Ensure SupplierKey is treated as an integer string, to avoid mismatches due to float representations (e.g. '123.0' vs '123')
-        unmatched_mi['PairID'] = unmatched_mi['SupplierKey'].astype('Int64').astype(str) + '+' + unmatched_mi['AIMatchedName'].str.lower()
+        unmatched_mi["PairID"] = (
+            unmatched_mi["SupplierKey"].astype("Int64").astype(str)
+            + "+"
+            + unmatched_mi["AIMatchedName"].str.lower()
+        )
         # join unmatched MI onto contracts
         contracts_with_mi_AI = contracts.merge(unmatched_mi, on="PairID", how="left")
-        
+
         contracts_with_mi = pd.concat([contracts_with_mi, contracts_with_mi_AI])
-        matched_pair_ids = mi['PairID'].isin(contracts_with_mi['PairID'])
+        matched_pair_ids = mi["PairID"].isin(contracts_with_mi["PairID"])
         unmatched_mi = mi[~matched_pair_ids]
 
     return (contracts_with_mi, unmatched_mi)
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     load_dotenv()
 
-    model = AzureChatOpenAI(
-        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-        openai_api_key=os.getenv("AZURE_OPENAI_KEY"),
-        azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
-        openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION")
-    )
     parser = argparse.ArgumentParser()
     parser.add_argument("--indir", required=True)
     parser.add_argument("--outdir", required=True)
@@ -96,7 +109,6 @@ if __name__ == "__main__":
         contracts_data=os.path.join(args.indir, "contracts.csv"),
         mi_data=os.path.join(args.indir, "mi.csv"),
         regno_key_pairs=os.path.join(args.indir, "reg_number_supplier_key.csv"),
-        model=model
     )
     combined.to_csv(os.path.join(args.outdir, "combined.csv"), index=False)
     unmatched.to_csv(os.path.join(args.outdir, "unmatched.csv"), index=False)

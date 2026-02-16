@@ -5,102 +5,102 @@ stages:
     deps:
     - path: params.yaml
       hash: md5
-      md5: f97b7473b2f01b92a7d53ff81aeb7d21
-      size: 49
+      md5: 266eb5edb3f304529774aeae34848ead
+      size: 48
     - path: scripts/get_data.py
       hash: md5
-      md5: 2d8967f8c36b2e5e92c8014c996b5522
-      size: 9901
+      md5: 5736d87ee715209650806484703bcb3f
+      size: 9688
     params:
       params.yaml:
         data_mode: dummy
     outs:
     - path: data/dummy/contracts.csv
       hash: md5
-      md5: 18557bead38e95b0fac436bb020dd58f
-      size: 1461
+      md5: 5adefbc408333ea351b087d8e6746d20
+      size: 1453
     - path: data/dummy/mi.csv
       hash: md5
-      md5: 2f83ce679102d5cddebd2166ea55b875
-      size: 754
+      md5: b6d2deb4652974113c858b914f051c6b
+      size: 740
     - path: data/dummy/reg_number_supplier_key.csv
       hash: md5
-      md5: f10f6d30eae8d9a9ea019a74e236d06a
-      size: 109
+      md5: 4457625db7c052547e8bf044ef879f83
+      size: 101
   combine:
     cmd: python scripts/combine_data.py --indir data/dummy --outdir data/dummy
     deps:
     - path: data/dummy/contracts.csv
       hash: md5
-      md5: 18557bead38e95b0fac436bb020dd58f
-      size: 1461
+      md5: 5adefbc408333ea351b087d8e6746d20
+      size: 1453
     - path: data/dummy/mi.csv
       hash: md5
-      md5: 2f83ce679102d5cddebd2166ea55b875
-      size: 754
+      md5: b6d2deb4652974113c858b914f051c6b
+      size: 740
     - path: data/dummy/reg_number_supplier_key.csv
       hash: md5
-      md5: f10f6d30eae8d9a9ea019a74e236d06a
-      size: 109
+      md5: 4457625db7c052547e8bf044ef879f83
+      size: 101
     - path: params.yaml
       hash: md5
-      md5: f97b7473b2f01b92a7d53ff81aeb7d21
-      size: 49
+      md5: 266eb5edb3f304529774aeae34848ead
+      size: 48
     - path: scripts/combine_data.py
       hash: md5
-      md5: b2a8bc89b7392a25a0f7e1f626ccaf8a
-      size: 5371
+      md5: 0e1c2e9789b08969ffeba3f72f984434
+      size: 5115
     - path: utils.py
       hash: md5
-      md5: 404b25bb768ca69caa29056f5d6e3a95
-      size: 2881
+      md5: 02ff6875eae2d6ce2f78e4746e71e7d9
+      size: 3793
     params:
       params.yaml:
         data_mode: dummy
     outs:
     - path: data/dummy/combined.csv
       hash: md5
-      md5: 97720ef60d1b0d00d26b08f63b82b274
-      size: 4261
+      md5: d6b31c0ddcea9b9b579c628b011b0a54
+      size: 4173
     - path: data/dummy/unmatched.csv
       hash: md5
-      md5: 7255cd4a0ac25afe6ffd2bd20b93e478
-      size: 536
+      md5: 76b99689bbe0b6243fe78a5464ea51e0
+      size: 528
   summarise:
     cmd: python scripts/summarise_data.py --indir data/dummy --outdir data/dummy
     deps:
     - path: data/dummy/combined.csv
       hash: md5
-      md5: 97720ef60d1b0d00d26b08f63b82b274
-      size: 4261
+      md5: d6b31c0ddcea9b9b579c628b011b0a54
+      size: 4173
     - path: data/dummy/contracts.csv
       hash: md5
-      md5: 18557bead38e95b0fac436bb020dd58f
-      size: 1461
+      md5: 5adefbc408333ea351b087d8e6746d20
+      size: 1453
     - path: data/dummy/unmatched.csv
       hash: md5
-      md5: 7255cd4a0ac25afe6ffd2bd20b93e478
-      size: 536
+      md5: 76b99689bbe0b6243fe78a5464ea51e0
+      size: 528
     - path: params.yaml
       hash: md5
-      md5: f97b7473b2f01b92a7d53ff81aeb7d21
-      size: 49
+      md5: 266eb5edb3f304529774aeae34848ead
+      size: 48
     - path: scripts/summarise_data.py
       hash: md5
-      md5: dd0bf372a9c0df84ad263f83727c4f8e
-      size: 4095
+      md5: bb4169f19390292907a036305b4d1fb1
+      size: 4003
     params:
       params.yaml:
         data_mode: dummy
     outs:
     - path: data/dummy/line_level.csv
       hash: md5
-      md5: 0def6cb61c8318526f93c60e19128b76
-      size: 1448
+      md5: de508b9b00024eaf882e834b6401dcae
+      size: 1441
     - path: data/dummy/summary_stats.csv
       hash: md5
-      md5: ded33b79cb56cb34d210a0f1332370d8
-      size: 282
+      md5: 630d10c75cd3462a57c8935045f6dec0
+      size: 273
   get_data@dummy:
     cmd: python scripts/get_data.py --mode dummy --outdir data/dummy
     deps:

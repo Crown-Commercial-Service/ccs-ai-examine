@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from datetime import datetime
 from typing import Dict, Any, List
 import random
 import pandas as pd
 import hashlib
 import yaml
 import mlflow
-mlflow.set_tracking_uri("file:./mlruns")
 
-from utils import match_string_with_langchain
-from evaluation.mock_langchain_model import MockChatModelWithCandidates
+from utils import match_string_via_api
+from evaluation.mock_langchain_model import MockChatModelWithCandidates  # noqa: F401
+
+mlflow.set_tracking_uri("file:./mlruns")
 
 # Optional: fallback mock model
 class _MockResponse:
@@ -114,7 +114,7 @@ def load_yaml_config(yaml_path: str) -> dict:
         return {}
     with open(p, "r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
-    
+
 def get_run_description(cfg: dict, prompt_file: str) -> str | None:
     """
     Your YAML has a structure like:
@@ -235,15 +235,9 @@ def evaluate_prompt_on_benchmark(
                         )
 
 
-            model = MockChatModelWithCandidates(
-                candidates=candidates,
-                similarity_threshold=similarity_threshold
-            )
-
-            pred_raw = match_string_with_langchain(
+            pred_raw = match_string_via_api(
                 input_string=input_name,
                 list_of_strings=candidates,
-                model=model,
                 prompt_path=prompt_path,
             )
 

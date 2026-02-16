@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "EXAMINE"
+version = "0.1.0"
+description = "EXpedient Analysis of Management Information to Notice Errors"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "pandas",
+    "python-dotenv",
+]
+
+[tool.setuptools]
+# Explicitly list top-level modules to include
+py-modules = ["utils"]
