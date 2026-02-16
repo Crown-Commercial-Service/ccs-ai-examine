@@ -1,3 +1,14 @@
+Metadata-Version: 2.4
+Name: EXAMINE
+Version: 0.1.0
+Summary: EXpedient Analysis of Management Information to Notice Errors
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: pandas
+Requires-Dist: python-dotenv
+
 # EXAMINE
 
 EXAMINE (**Ex**pedient **A**nalysis of **M**anagement **I**nformation to **N**otice **E**rrors) is a system that helps CCS identify potential errors in supplier-reported Management Information (MI), particularly under-reported or missing spend.
@@ -18,13 +29,7 @@ Activate:
 Install dependencies:
 
 ```bash
-python -m pip install -r requirements.txt
-```
-
-Install the repo itself to find the util functions:
-
-```bash
-python -m pip install -e .
+pip install -r requirements.txt
 ```
 
 ### Environment Variables

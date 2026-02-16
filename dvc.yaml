@@ -1,0 +1,41 @@
+stages:
+  get_data:
+    cmd: python scripts/get_data.py --mode ${data_mode} --outdir data/${data_mode}
+    deps:
+      - scripts/get_data.py
+      - params.yaml
+    params:
+      - data_mode
+    outs:
+      - data/${data_mode}/contracts.csv
+      - data/${data_mode}/mi.csv
+      - data/${data_mode}/reg_number_supplier_key.csv
+
+  combine:
+    cmd: python scripts/combine_data.py --indir data/${data_mode} --outdir data/${data_mode}
+    deps:
+      - scripts/combine_data.py
+      - utils.py
+      - data/${data_mode}/contracts.csv
+      - data/${data_mode}/mi.csv
+      - data/${data_mode}/reg_number_supplier_key.csv
+      - params.yaml
+    params:
+      - data_mode
+    outs:
+      - data/${data_mode}/combined.csv
+      - data/${data_mode}/unmatched.csv
+
+  summarise:
+    cmd: python scripts/summarise_data.py --indir data/${data_mode} --outdir data/${data_mode}
+    deps:
+      - scripts/summarise_data.py
+      - data/${data_mode}/contracts.csv
+      - data/${data_mode}/combined.csv
+      - data/${data_mode}/unmatched.csv
+      - params.yaml
+    params:
+      - data_mode
+    outs:
+      - data/${data_mode}/summary_stats.csv
+      - data/${data_mode}/line_level.csv

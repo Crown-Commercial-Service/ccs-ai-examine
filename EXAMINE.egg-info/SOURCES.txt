@@ -1,0 +1,11 @@
+README.md
+pyproject.toml
+utils.py
+EXAMINE.egg-info/PKG-INFO
+EXAMINE.egg-info/SOURCES.txt
+EXAMINE.egg-info/dependency_links.txt
+EXAMINE.egg-info/requires.txt
+EXAMINE.egg-info/top_level.txt
+tests/test_distractors.py
+tests/test_match_string_via_api.py
+tests/test_mock_and_utils.py
