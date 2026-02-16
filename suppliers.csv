@@ -1,9 +1,11 @@
-framework,name,color,buyer_name,contract_value,buyer_spend,reported_spend,suggested_email
-Framework 1,Supplier 1,red,Buyer A,1000000,100000,50000,supplier1@example.com
-Framework 1,Supplier 2,yellow,Buyer B,2000000,200000,150000,supplier2@example.com
-Framework 1,Supplier 3,yellow,Buyer C,3000000,300000,250000,supplier3@example.com
-Framework 1,Supplier 4,green,Buyer D,4000000,400000,350000,supplier4@example.com
-Framework 1,Supplier 5,green,Buyer E,5000000,500000,450000,supplier5@example.com
-Framework 2,Supplier 6,red,Buyer F,6000000,600000,550000,supplier6@example.com
-Framework 2,Supplier 7,yellow,Buyer G,7000000,700000,650000,supplier7@example.com
-Framework 2,Supplier 8,green,Buyer H,8000000,800000,750000,supplier8@example.com
+framework,name,buyer_name,contract_value,contract_start,contract_end,reported_spend
+Framework 1,Supplier 1,Buyer A,2000000,2020-10-23,2024-10-23,0
+Framework 1,Supplier 2,Buyer B,1000000,2020-04-18,2024-04-18,0
+Framework 1,Supplier 3,Buyer C,4000000,2024-07-01,2026-07-01,0
+Framework 1,Supplier 4,Buyer D,4500000,2025-08-01,2027-08-01,0
+Framework 1,Supplier 5,Buyer E,4000000,2025-09-01,2027-09-01,0
+Framework 1,Supplier 6,Buyer F,3000000,2020-07-01,2024-02-12,2000000
+Framework 1,Supplier 7,Buyer G,5000000,2021-09-05,2023-09-05,5000000
+Framework 2,Supplier 8,Buyer H,6000000,2021-11-28,2023-11-28,0
+Framework 2,Supplier 9,Buyer I,7000000,2023-01-15,2027-01-15,0
+Framework 2,Supplier 10,Buyer J,8000000,2024-08-20,2025-08-20,8000000

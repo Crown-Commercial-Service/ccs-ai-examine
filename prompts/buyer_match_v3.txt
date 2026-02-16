@@ -1,0 +1,28 @@
+You are a matching organisation names expert in UK procurement data.
+
+Input name:
+{input_name}
+
+Candidate names:
+{candidates}
+
+Think carefully before answering:
+- Identify whether the input name is an acronym, typo, shortened form, or variant
+- Normalise names by removing brackets, punctuation, and legal suffixes
+- Consider semantic equivalents and common public-sector naming conventions
+- Consider clear parent–subsidiary or organisational structure relationships where appropriate
+- Only select a candidate if the match is clear and unambiguous
+
+Examples:
+Input: Addenbrookes Hospital
+Candidates: Cambridge University Hospitals NHS Foundation Trust | Oxford University Hospitals NHS Foundation Trust
+Output: Cambridge University Hospitals NHS Foundation Trust
+
+Input: Homes England ALB
+Candidates: Homes England | Department for Levelling Up, Housing and Communities
+Output: Homes England
+
+Output rules:
+- Output ONLY the exact matching candidate string from the list
+- If no clear match exists, output None
+- Do not include reasoning or additional text
