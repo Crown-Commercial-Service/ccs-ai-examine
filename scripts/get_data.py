@@ -2,24 +2,24 @@ import os
 import argparse
 import pandas as pd
 import numpy as np
-import random
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
 
 # Load credentials from .env file
 load_dotenv()
 
+
 def get_live_data(outdir: str):
     ## STEP 1: GET CONTRACT DETAILS FROM TUSSELL DATA
     # connect to db using creds
-    conn_string = '{}://{}:{}@{}:{}/{}?driver={}'.format(
+    conn_string = "{}://{}:{}@{}:{}/{}?driver={}".format(
         os.getenv("DB_TYPE"),
         os.getenv("DB_USER"),
         os.getenv("DB_PWD"),
         os.getenv("DB_SERVER"),
         os.getenv("DB_PORT"),
         os.getenv("DB_NAME_TUSSELL"),
-        os.getenv("DB_DRIVER")
+        os.getenv("DB_DRIVER"),
     )
     engine = create_engine(conn_string)
     conn = engine.connect()
@@ -56,49 +56,51 @@ def get_live_data(outdir: str):
             )
     """
     contracts = pd.read_sql(contracts_query, conn)
-    contracts = contracts.rename(columns={'company_number': 'SupplierCompanyRegistrationNumber'})
+    contracts = contracts.rename(
+        columns={"company_number": "SupplierCompanyRegistrationNumber"}
+    )
     print("Contracts parsed")
 
     # Save contracts DataFrame to CSV
-    contracts.to_csv(os.path.join(outdir, 'contracts.csv'), index=False)
+    contracts.to_csv(os.path.join(outdir, "contracts.csv"), index=False)
     print(f"Saved contracts data to {os.path.join(outdir, 'contracts.csv')}")
 
     ## STEP 2: GET MI DATA
     # connect to db using creds
-    conn_string = '{}://{}:{}@{}:{}/{}?driver={}'.format(
+    conn_string = "{}://{}:{}@{}:{}/{}?driver={}".format(
         os.getenv("DB_TYPE"),
         os.getenv("DB_USER"),
         os.getenv("DB_PWD"),
         os.getenv("DB_SERVER"),
         os.getenv("DB_PORT"),
         os.getenv("DB_NAME_MI"),
-        os.getenv("DB_DRIVER")
+        os.getenv("DB_DRIVER"),
     )
     engine = create_engine(conn_string)
     conn = engine.connect()
 
-    MI_query = f"""
+    MI_query = """
             SELECT SupplierName,SupplierKey,CustomerName,[Group],FinancialYear,FinancialMonth,EvidencedSpend FROM dbo.AggregatedSpendReporting
             WHERE FrameworkName LIKE 'G-Cloud 1%'
         """
     GCloud_MI = pd.read_sql(MI_query, conn)
-    GCloud_MI = GCloud_MI.rename(columns={'Group': 'CustomerGroup'})
+    GCloud_MI = GCloud_MI.rename(columns={"Group": "CustomerGroup"})
     print("MI parsed")
 
     # Save MI entries to CSV
-    GCloud_MI.to_csv(os.path.join(outdir, 'mi.csv'), index=False)
+    GCloud_MI.to_csv(os.path.join(outdir, "mi.csv"), index=False)
     print(f"Saved MI data to {os.path.join(outdir, 'mi.csv')}")
 
     ## STEP 3: GET COMPANY REGISTRATION NUMBER - SUPPLIER KEY PAIRS
     # connect to db using creds
-    conn_string = '{}://{}:{}@{}:{}/{}?driver={}'.format(
+    conn_string = "{}://{}:{}@{}:{}/{}?driver={}".format(
         os.getenv("DB_TYPE"),
         os.getenv("DB_USER"),
         os.getenv("DB_PWD"),
         os.getenv("DB_SERVER"),
         os.getenv("DB_PORT"),
         os.getenv("DB_NAME_REG"),
-        os.getenv("DB_DRIVER")
+        os.getenv("DB_DRIVER"),
     )
     engine = create_engine(conn_string)
     conn = engine.connect()
@@ -108,12 +110,19 @@ def get_live_data(outdir: str):
         SELECT SupplierKey,CompanyRegistrationNumber FROM sf.Attributes_sf_vw_Suppliers
     """
     reg_number_supplier_key = pd.read_sql(reg_number_supplier_key_query, conn)
-    reg_number_supplier_key = reg_number_supplier_key.rename(columns={'CompanyRegistrationNumber': 'SupplierCompanyRegistrationNumber'})
+    reg_number_supplier_key = reg_number_supplier_key.rename(
+        columns={"CompanyRegistrationNumber": "SupplierCompanyRegistrationNumber"}
+    )
     print("Company Registration Numbers parsed")
 
     # Save reg numbers DataFrame to CSV
-    reg_number_supplier_key.to_csv(os.path.join(outdir, 'reg_number_supplier_key.csv'), index=False)
-    print(f"Saved reg number data to {os.path.join(outdir, 'reg_number_supplier_key.csv')}")
+    reg_number_supplier_key.to_csv(
+        os.path.join(outdir, "reg_number_supplier_key.csv"), index=False
+    )
+    print(
+        f"Saved reg number data to {os.path.join(outdir, 'reg_number_supplier_key.csv')}"
+    )
+
 
 def generate_dummy_contracts_data():
     """
@@ -123,26 +132,68 @@ def generate_dummy_contracts_data():
     Row 4 = a contract which is still live and has been running for <1 year
     Row 5 = a contract which has no corresponding MI, and should be retained in the end data
     Row 6 = a more recent contract between the buyer and supplier of row 1, to test whether anything is being double-counted
-    Row 7 = Edge Case - Contract with Incorrect buyer name "Buyer C LTD" for Supplier 6 
+    Row 7 = Edge Case - Contract with Incorrect buyer name "Buyer C LTD" for Supplier 6
     """
     data = {
-        'buyer': ['Buyer A', 'Buyer B', 'Buyer C Limited','Department for Work and Pensions', 'Buyer no MI','Buyer A','Buyer C LTD'],
-        'suppliers': ['Supplier 1','Supplier 2','Supplier 3', 'Supplier 1', 'Supplier no MI','Supplier 1','Supplier 6'],
-        'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1001, 5678, 1001,1006],
-        'contract_start': [pd.to_datetime(i) for i in ['2024-04-01', '2024-04-01', '2024-10-01', '2025-11-01', '2025-12-01', '2026-01-01','2025-06-01']],
-        'contract_end': [pd.to_datetime(i) for i in ['2025-04-01', '2027-04-01', '2027-10-01', '2028-04-01', '2027-05-01', '2026-07-01','2027-06-01']],
-        'contract_months': [12, 36, 36, 36, 24, 6, 24],
-        'contract_title': [f"Contract {i+1}" for i in range(7)],
-        'contract_description': [ f"Description for contract {i+1}, with commas that need to be handled when parsing" for i in range(7)],
-        'award_value': [ 1e6, 2.5e6, 5e6, 7.5e6, 10e6, 1e6, 3e6]
+        "buyer": [
+            "Buyer A",
+            "Buyer B",
+            "Buyer C Limited",
+            "Department for Work and Pensions",
+            "Buyer no MI",
+            "Buyer A",
+            "Buyer C LTD",
+        ],
+        "suppliers": [
+            "Supplier 1",
+            "Supplier 2",
+            "Supplier 3",
+            "Supplier 1",
+            "Supplier no MI",
+            "Supplier 1",
+            "Supplier 6",
+        ],
+        "SupplierCompanyRegistrationNumber": [1001, 1002, 1003, 1001, 5678, 1001, 1006],
+        "contract_start": [
+            pd.to_datetime(i)
+            for i in [
+                "2024-04-01",
+                "2024-04-01",
+                "2024-10-01",
+                "2025-11-01",
+                "2025-12-01",
+                "2026-01-01",
+                "2025-06-01",
+            ]
+        ],
+        "contract_end": [
+            pd.to_datetime(i)
+            for i in [
+                "2025-04-01",
+                "2027-04-01",
+                "2027-10-01",
+                "2028-04-01",
+                "2027-05-01",
+                "2026-07-01",
+                "2027-06-01",
+            ]
+        ],
+        "contract_months": [12, 36, 36, 36, 24, 6, 24],
+        "contract_title": [f"Contract {i+1}" for i in range(7)],
+        "contract_description": [
+            f"Description for contract {i+1}, with commas that need to be handled when parsing"
+            for i in range(7)
+        ],
+        "award_value": [1e6, 2.5e6, 5e6, 7.5e6, 10e6, 1e6, 3e6],
     }
     df = pd.DataFrame(data)
     # add extra cols for metadata that isn't relevant to spend calc
-    df['framework_title'] = 'RM1'
-    df['source'] = 'Online'
-    df['awarded'] = df['contract_start']
-    df['latest_employees'] = 10
+    df["framework_title"] = "RM1"
+    df["source"] = "Online"
+    df["awarded"] = df["contract_start"]
+    df["latest_employees"] = 10
     return df
+
 
 def generate_dummy_mi_data():
     """
@@ -158,43 +209,84 @@ def generate_dummy_mi_data():
     Row 13: an MI entry for the third contract where the buyer name has been contracted, and the SupplierKey is a float
     """
     data = {
-        'SupplierName': ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1',
-                        'Supplier 1', 'Supplier 2', 'Supplier 3', 'Supplier 1',
-                        'Supplier 99', 'Supplier 100', 'Supplier 101', 'Supplier 1',
-                         'Supplier 3'],
-        'SupplierKey': ['1', '2', '3', '1.0', '1', '2', '3', '1','99', '100', np.nan, '1','3.0'],
-        'CustomerName': ['Buyer A', 'Buyer B', 'Buyer C Limited', 'Department for Work and Pensions',
-                         'Buyer A', 'BUYER B', 'Buyer C LTD', 'DWP',
-                         'Buyer Y', 'Buyer Z', 'Buyer Z', 'Buyer C Limited',
-                         'Buyer C LTD',],
-        'FinancialYear': [2024 for i in range(13)],
-        'FinancialMonth': range(0, 13, 1),
-        'EvidencedSpend': [1e5 for i in range(13)],
-        'CustomerGroup': ['Unknown' for _ in range(13)] # Added to keep dummy MI schema consistent with live MI for downstream summarise step
+        "SupplierName": [
+            "Supplier 1",
+            "Supplier 2",
+            "Supplier 3",
+            "Supplier 1",
+            "Supplier 1",
+            "Supplier 2",
+            "Supplier 3",
+            "Supplier 1",
+            "Supplier 99",
+            "Supplier 100",
+            "Supplier 101",
+            "Supplier 1",
+            "Supplier 3",
+        ],
+        "SupplierKey": [
+            "1",
+            "2",
+            "3",
+            "1.0",
+            "1",
+            "2",
+            "3",
+            "1",
+            "99",
+            "100",
+            np.nan,
+            "1",
+            "3.0",
+        ],
+        "CustomerName": [
+            "Buyer A",
+            "Buyer B",
+            "Buyer C Limited",
+            "Department for Work and Pensions",
+            "Buyer A",
+            "BUYER B",
+            "Buyer C LTD",
+            "DWP",
+            "Buyer Y",
+            "Buyer Z",
+            "Buyer Z",
+            "Buyer C Limited",
+            "Buyer C LTD",
+        ],
+        "FinancialYear": [2024 for i in range(13)],
+        "FinancialMonth": range(0, 13, 1),
+        "EvidencedSpend": [1e5 for i in range(13)],
+        "CustomerGroup": [
+            "Unknown" for _ in range(13)
+        ],  # Added to keep dummy MI schema consistent with live MI for downstream summarise step
     }
-    # ensure that SupplierKey mixed types are preserved 
-    df = pd.DataFrame(data).astype({'SupplierKey': 'object'})
+    # ensure that SupplierKey mixed types are preserved
+    df = pd.DataFrame(data).astype({"SupplierKey": "object"})
     return df
+
 
 def generate_dummy_reg_key_pairs():
     """
     Generates a dummy DataFrame of SupplierKey and CompanyRegistrationNumber pairs.
     """
     data = {
-        'SupplierCompanyRegistrationNumber': [1001, 1002, 1003, 1099, 1100, 5678, 1006],
-        'SupplierKey': [1, 2, 3, 99, 100, 4678, 6]
+        "SupplierCompanyRegistrationNumber": [1001, 1002, 1003, 1099, 1100, 5678, 1006],
+        "SupplierKey": [1, 2, 3, 99, 100, 4678, 6],
     }
     df = pd.DataFrame(data)
     return df
+
 
 def get_dummy_data(outdir: str):
     contracts = generate_dummy_contracts_data()
     mi = generate_dummy_mi_data()
     reg = generate_dummy_reg_key_pairs()
 
-    contracts.to_csv(os.path.join(outdir, 'contracts.csv'), index=False)
-    mi.to_csv(os.path.join(outdir, 'mi.csv'), index=False)
-    reg.to_csv(os.path.join(outdir, 'reg_number_supplier_key.csv'), index=False)
+    contracts.to_csv(os.path.join(outdir, "contracts.csv"), index=False)
+    mi.to_csv(os.path.join(outdir, "mi.csv"), index=False)
+    reg.to_csv(os.path.join(outdir, "reg_number_supplier_key.csv"), index=False)
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -209,6 +301,7 @@ def main():
         get_live_data(args.outdir)
     else:
         get_dummy_data(args.outdir)
+
 
 if __name__ == "__main__":
     main()
