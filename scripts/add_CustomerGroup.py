@@ -57,7 +57,7 @@ print(f"MI and Salesforce combined in one df with {len(customer_name_group_df)} 
 customer_name_group_df = customer_name_group_df.drop_duplicates()
 customer_name_group_dict = dict(zip(customer_name_group_df['CustomerName'], customer_name_group_df['CustomerGroup']))
 
-# read in combined data, and map 
+# read in combined data, and map
 combined = pd.read_csv("data/combined.csv", low_memory=False)
 print(f"Before adding customer group, there are {len(combined)} entries in the combined dataframe")
 # remove anything after opening a bracket, because these elements throw off matching
@@ -65,4 +65,5 @@ combined['CustomerGroup'] = combined['buyer'].str.split("(").str[0].str.strip()
 combined['CustomerGroup'] = combined['CustomerGroup'].str.replace('&', 'and')
 combined['CustomerGroup'] = combined['CustomerGroup'].map(customer_name_group_dict)
 print(f"After joining customer group, there are {len(combined)} entries in the combined dataframe")
-combined.to_csv("data/combined_with_CustomerGroup.csv", index=False)
+combined.to_csv("data/combined_with_CustomerGroup.csv", index=False
+)
