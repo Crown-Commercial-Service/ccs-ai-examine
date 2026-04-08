@@ -134,18 +134,18 @@ def match_strings_via_api_concurrent(
     if not unique_inputs:
         return {}
 
-    if len(unique_inputs) == 1 or max_workers == 1:
-        only = unique_inputs[0]
-        return {
-            only: match_string_via_api(
-                input_string=only,
+    if max_workers == 1:
+        serial_results: Dict[str, str] = {}
+        for item in unique_inputs:
+            serial_results[item] = match_string_via_api(
+                input_string=item,
                 list_of_strings=list_of_strings,
                 prompt_path=prompt_path,
                 api_url=api_url,
                 timeout_s=timeout_s,
                 extra_query_params=extra_query_params,
             )
-        }
+        return serial_results
 
     results: Dict[str, str] = {}
     worker_count = min(max_workers, len(unique_inputs))
