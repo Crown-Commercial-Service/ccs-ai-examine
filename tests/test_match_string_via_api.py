@@ -72,3 +72,79 @@ def test_match_string_via_api_propagates_http_errors(monkeypatch):
     with pytest.raises(RuntimeError, match="Match API error 500: boom"):
         utils.match_string_via_api(input_string="X", list_of_strings=["A", "B"])
 
+
+def test_match_strings_via_api_concurrent_returns_mapping(monkeypatch):
+    def _fake_http_get(url: str, timeout_s: float = 60.0):
+        qs = parse_qs(urlparse(url).query)
+        name = qs["input_string"][0]
+        body = {"input_string": name, "match": "A", "raw": "A"}
+        return 200, json.dumps(body)
+
+    monkeypatch.setenv("MATCH_STRING_API_URL", "http://example.test/match")
+    monkeypatch.setattr(utils, "_http_get", _fake_http_get)
+
+    out = utils.match_strings_via_api_concurrent(
+        input_strings=["x", "y", "z"],
+        list_of_strings=["A", "B"],
+        max_workers=3,
+    )
+
+    assert out == {"x": "A", "y": "A", "z": "A"}
+
+
+def test_match_strings_via_api_concurrent_rejects_invalid_workers():
+    with pytest.raises(ValueError, match="max_workers must be > 0"):
+        utils.match_strings_via_api_concurrent(
+            input_strings=["x"],
+            list_of_strings=["A"],
+            max_workers=0,
+        )
+
+
+def test_match_strings_via_api_concurrent_uses_expected_worker_count(monkeypatch):
+    observed = {"max_workers": None}
+
+    def _fake_match_string_via_api(
+        input_string,
+        list_of_strings,
+        prompt_path=None,
+        api_url=None,
+        timeout_s=60.0,
+        extra_query_params=None,
+    ):
+        return "A"
+
+    class _FakeFuture:
+        def __init__(self, result_value):
+            self._result_value = result_value
+
+        def result(self):
+            return self._result_value
+
+    class _FakeThreadPoolExecutor:
+        def __init__(self, max_workers):
+            observed["max_workers"] = max_workers
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def submit(self, fn, **kwargs):
+            return _FakeFuture(fn(**kwargs))
+
+    monkeypatch.setattr(utils, "match_string_via_api", _fake_match_string_via_api)
+    monkeypatch.setattr(utils, "ThreadPoolExecutor", _FakeThreadPoolExecutor)
+    monkeypatch.setattr(utils, "as_completed", lambda futures: list(futures))
+
+    out = utils.match_strings_via_api_concurrent(
+        input_strings=["x", "y", "y"],
+        list_of_strings=["A", "B"],
+        max_workers=10,
+    )
+
+    # unique inputs are ["x", "y"], so worker count is capped at 2.
+    assert observed["max_workers"] == 2
+    assert out == {"x": "A", "y": "A"}
+

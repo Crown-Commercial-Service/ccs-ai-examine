@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import json
 from typing import List, Any, Optional, Dict, Tuple
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import urllib.parse
 import urllib.request
@@ -106,3 +107,63 @@ def match_string_via_api(
     if raw_result in list_of_strings or raw_result == "None":
         return raw_result
     return "None"
+
+
+def match_strings_via_api_concurrent(
+    input_strings: List[str],
+    list_of_strings: List[str],
+    prompt_path: Optional[str] = None,
+    api_url: Optional[str] = None,
+    timeout_s: float = 60.0,
+    max_workers: int = 8,
+    extra_query_params: Optional[Dict[str, str]] = None,
+) -> Dict[str, str]:
+    """
+    Concurrently resolve many input strings via match_string_via_api.
+
+    Returns a mapping of input_string -> matched result.
+    """
+    if max_workers <= 0:
+        raise ValueError("max_workers must be > 0")
+
+    unique_inputs: List[str] = []
+    for item in input_strings:
+        if item not in unique_inputs:
+            unique_inputs.append(item)
+
+    if not unique_inputs:
+        return {}
+
+    if len(unique_inputs) == 1 or max_workers == 1:
+        only = unique_inputs[0]
+        return {
+            only: match_string_via_api(
+                input_string=only,
+                list_of_strings=list_of_strings,
+                prompt_path=prompt_path,
+                api_url=api_url,
+                timeout_s=timeout_s,
+                extra_query_params=extra_query_params,
+            )
+        }
+
+    results: Dict[str, str] = {}
+    worker_count = min(max_workers, len(unique_inputs))
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        futures = {
+            executor.submit(
+                match_string_via_api,
+                input_string=item,
+                list_of_strings=list_of_strings,
+                prompt_path=prompt_path,
+                api_url=api_url,
+                timeout_s=timeout_s,
+                extra_query_params=extra_query_params,
+            ): item
+            for item in unique_inputs
+        }
+        for future in as_completed(futures):
+            key = futures[future]
+            results[key] = future.result()
+
+    return results
