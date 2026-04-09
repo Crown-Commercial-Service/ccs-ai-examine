@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import argparse
 from dotenv import load_dotenv
-from utils import match_string_via_api
+from utils import match_strings_via_api_concurrent
 
 
 def combine_data(contracts_data, mi_data, regno_key_pairs):
@@ -65,19 +65,13 @@ def combine_data(contracts_data, mi_data, regno_key_pairs):
     # Set MATCH_STRING_API_URL to your external `GET /match` endpoint.
     if not unmatched_mi.empty:
         unique_unmatched_customers = unmatched_mi["CustomerName"].unique().tolist()
-        name_map = {}
-        count = 0
-        for i in unique_unmatched_customers:
-            name_match = match_string_via_api(
-                input_string=i,
-                list_of_strings=buyer_names_from_contracts,
-                prompt_path="./prompts/buyer_match_v2.txt",
-                api_url=os.getenv("NAME_MATCH_API_ENDPOINT"),
-            )
-            name_map[i] = name_match
-            count += 1
-            if count % 50 == 0:
-                print(f"Matched {count} / {len(unique_unmatched_customers)}")
+        name_map = match_strings_via_api_concurrent(
+            input_strings=unique_unmatched_customers,
+            list_of_strings=buyer_names_from_contracts,
+            prompt_path="./prompts/buyer_match_v2.txt",
+            api_url=os.getenv("NAME_MATCH_API_ENDPOINT"),
+            max_workers=int(os.getenv("MATCH_STRING_MAX_WORKERS", "8")),
+        )
         unmatched_mi["AIMatchedName"] = unmatched_mi["CustomerName"].map(name_map)
         # Ensure SupplierKey is treated as an integer string, to avoid mismatches due to float representations (e.g. '123.0' vs '123')
         unmatched_mi["PairID"] = (

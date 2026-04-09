@@ -11,6 +11,7 @@ pyodbc==5.3.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.1
 pytz==2025.2
+ruff==0.15.1
 six==1.17.0
 SQLAlchemy==2.0.44
 typing_extensions==4.15.0
