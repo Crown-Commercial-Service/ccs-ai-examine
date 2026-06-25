@@ -7,7 +7,9 @@ from dotenv import load_dotenv
 from matplotlib.backends.backend_pdf import PdfPages
 
 
-def summarise_undeclared_spend_by_category(df: pd.DataFrame) -> pd.DataFrame:
+def summarise_undeclared_spend_by_category(
+    df: pd.DataFrame, output_path: str = "results/undeclared_spend_by_category.csv"
+) -> pd.DataFrame:
     """
     Summarises total undeclared spend grouped by Category.
 
@@ -16,10 +18,13 @@ def summarise_undeclared_spend_by_category(df: pd.DataFrame) -> pd.DataFrame:
     2. Group by `Category`.
     3. Sum the `Undeclared Amount (Spend)` for each group.
     4. Sort the result in descending order of `Undeclared Amount (Spend)`.
+    5. Write the summary to a CSV file at `output_path`.
 
     Args:
         df: A DataFrame containing at least the columns `Category` and
             `Undeclared Amount (Spend)`.
+        output_path: File path for the output CSV. Defaults to
+            ``results/undeclared_spend_by_category.csv``.
 
     Returns:
         A DataFrame with one row per Category, indexed by Category, with the
@@ -32,10 +37,15 @@ def summarise_undeclared_spend_by_category(df: pd.DataFrame) -> pd.DataFrame:
         .reset_index()
         .sort_values("Undeclared Amount (Spend)", ascending=False)
     )
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    summary.to_csv(output_path, index=False)
     return summary
 
 
-def plot_undeclared_spend_distribution(df: pd.DataFrame, output_path: str) -> None:
+def plot_undeclared_spend_distribution(
+    df: pd.DataFrame,
+    output_path: str = "results/undeclared_spend_distribution.pdf",
+) -> None:
     """
     Plots the distribution of undeclared spend within each Category as a
     histogram, faceted by Category, and writes the result to an A4 PDF with
@@ -44,7 +54,8 @@ def plot_undeclared_spend_distribution(df: pd.DataFrame, output_path: str) -> No
     Args:
         df: A DataFrame containing at least the columns `Category` and
             `Undeclared Amount (Spend)`.
-        output_path: File path for the output PDF.
+        output_path: File path for the output PDF. Defaults to
+            ``results/undeclared_spend_distribution.pdf``.
     """
     # A4 dimensions in inches (landscape gives more space for 2x4 grid)
     A4_LANDSCAPE = (11.69, 8.27)
@@ -55,6 +66,7 @@ def plot_undeclared_spend_distribution(df: pd.DataFrame, output_path: str) -> No
     categories = sorted(df["Category"].dropna().unique())
     n_pages = math.ceil(len(categories) / PLOTS_PER_PAGE)
 
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with PdfPages(output_path) as pdf:
         for page in range(n_pages):
             page_categories = categories[
@@ -116,7 +128,7 @@ def main():
     print(summary.to_string(index=False))
 
     # Plot distribution of undeclared spend per category
-    output_pdf = "undeclared_spend_distribution.pdf"
+    output_pdf = "results/undeclared_spend_distribution.pdf"
     plot_undeclared_spend_distribution(df, output_pdf)
     print(f"\nDistribution plots written to: {output_pdf}")
 

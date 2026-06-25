@@ -9,3 +9,4 @@ dummy_data/*
 mlflow_outputs/*
 mlruns/*
 mlflow.db
+results/*
