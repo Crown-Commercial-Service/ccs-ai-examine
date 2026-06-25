@@ -21,30 +21,36 @@ def summarise_undeclared_spend_by_category(
     5. Write the summary to a CSV file at `output_path`.
 
     Args:
-        df: A DataFrame containing at least the columns `Category` and
-            `Undeclared Amount (Spend)`.
+        df: A DataFrame containing at least the columns `Category`,
+            `Undeclared Amount (Spend)`, and `Supplier`.
         output_path: File path for the output CSV. Defaults to
             ``results/undeclared_spend_by_category.csv``.
 
     Returns:
         A DataFrame with one row per Category, indexed by Category, with the
-        total `Undeclared Amount (Spend)` sorted highest-first.
+        total `Undeclared Amount (Spend)` and `Number of Suppliers` sorted
+        highest-first by spend.
     """
     sorted_df = df.sort_values("Category")
+    grouped = sorted_df.groupby("Category")
     summary = (
-        sorted_df.groupby("Category")["Undeclared Amount (Spend)"]
+        grouped["Undeclared Amount (Spend)"]
         .sum()
         .reset_index()
         .sort_values("Undeclared Amount (Spend)", ascending=False)
     )
+    supplier_counts = (
+        grouped["Supplier"].nunique().reset_index(name="Number of Suppliers")
+    )
+    summary = summary.merge(supplier_counts, on="Category")
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     summary.to_csv(output_path, index=False)
     return summary
 
 
-def plot_undeclared_spend_distribution(
+def plot_undeclared_spend_faceted(
     df: pd.DataFrame,
-    output_path: str = "results/undeclared_spend_distribution.pdf",
+    output_path: str = "results/undeclared_spend_faceted.pdf",
 ) -> None:
     """
     Plots the distribution of undeclared spend within each Category as a
@@ -55,7 +61,7 @@ def plot_undeclared_spend_distribution(
         df: A DataFrame containing at least the columns `Category` and
             `Undeclared Amount (Spend)`.
         output_path: File path for the output PDF. Defaults to
-            ``results/undeclared_spend_distribution.pdf``.
+            ``results/undeclared_spend_faceted.pdf``.
     """
     # A4 dimensions in inches (landscape gives more space for 2x4 grid)
     A4_LANDSCAPE = (11.69, 8.27)
@@ -105,6 +111,51 @@ def plot_undeclared_spend_distribution(
             plt.close(fig)
 
 
+def plot_top_n_undeclared_spend(
+    df: pd.DataFrame,
+    summary: pd.DataFrame,
+    top_n: int = 3,
+    output_path: str = "results/undeclared_spend_top_n.svg",
+) -> None:
+    """
+    Plots interleaved histograms of undeclared spend for the top-N categories
+    by total undeclared spend, on a single axes, and writes the result to an SVG.
+
+    Args:
+        df: A DataFrame containing at least the columns `Category` and
+            `Undeclared Amount (Spend)`.
+        summary: A DataFrame as returned by
+            :func:`summarise_undeclared_spend_by_category`, with columns
+            ``Category`` and ``Undeclared Amount (Spend)`` sorted
+            highest-first.
+        top_n: Number of top categories to include. Defaults to ``3``.
+        output_path: File path for the output SVG. Defaults to
+            ``results/undeclared_spend_top_n.svg``.
+    """
+    top_categories = summary.head(top_n)["Category"].tolist()
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    for category in top_categories:
+        spend = (
+            df.loc[df["Category"] == category, "Undeclared Amount (Spend)"].dropna()
+            / 1_000_000
+        )
+        ax.hist(spend, bins=20, alpha=0.5, edgecolor="white", label=category)
+
+    ax.set_title(
+        f"Distribution of Undeclared Spend — Top {top_n} Categories by Total Spend",
+        fontsize=11,
+    )
+    ax.set_xlabel("Undeclared Spend (£m)", fontsize=10)
+    ax.set_ylabel("Count", fontsize=10)
+    ax.legend(title="Category", fontsize=8)
+    fig.tight_layout()
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    fig.savefig(output_path, format="svg", bbox_inches="tight")
+    plt.close(fig)
+
+
 def main():
     # Load environment variables from .env file
     load_dotenv()
@@ -127,10 +178,15 @@ def main():
     summary = summarise_undeclared_spend_by_category(df)
     print(summary.to_string(index=False))
 
-    # Plot distribution of undeclared spend per category
-    output_pdf = "results/undeclared_spend_distribution.pdf"
-    plot_undeclared_spend_distribution(df, output_pdf)
-    print(f"\nDistribution plots written to: {output_pdf}")
+    # Plot faceted distribution of undeclared spend per category
+    faceted_pdf = "results/undeclared_spend_faceted.pdf"
+    plot_undeclared_spend_faceted(df, faceted_pdf)
+    print(f"\nFaceted distribution plots written to: {faceted_pdf}")
+
+    # Plot interleaved distribution for the top-N categories
+    top_n_svg = "results/undeclared_spend_top_n.svg"
+    plot_top_n_undeclared_spend(df, summary, top_n=3, output_path=top_n_svg)
+    print(f"Top-N interleaved distribution plot written to: {top_n_svg}")
 
 
 if __name__ == "__main__":
