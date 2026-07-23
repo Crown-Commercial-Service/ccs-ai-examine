@@ -2,6 +2,9 @@ import os
 import argparse
 import pandas as pd
 import numpy as np
+import urllib.parse
+import struct
+from azure.identity import InteractiveBrowserCredential
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
 
@@ -9,19 +12,46 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+def get_token_based_engine(db_server, db_name, db_driver):
+    """
+    Create a SQLAlchemy engine with token-based authentication for Purview compatibility.
+    """
+    # We do not include the UID or Authentication type in the string anymore,
+    # because the token handles the identity payload securely.
+    odbc_conn_str = (
+        f"DRIVER={db_driver};"
+        f"SERVER={db_server};"
+        f"DATABASE={db_name};"
+        f"Encrypt=yes;"
+        f"TrustServerCertificate=no;"
+    )
+    # 1. Trigger the browser prompt to get the token
+    credential = InteractiveBrowserCredential()
+    # The scope specifically required for Azure SQL Database
+    token_obj = credential.get_token("https://database.windows.net/.default")
+
+    # 2. Format the token exactly how the ODBC driver requires it (UTF-16-LE + length)
+    token_bytes = token_obj.token.encode("UTF-16-LE")
+    token_struct = struct.pack(f"<I{len(token_bytes)}s", len(token_bytes), token_bytes)
+
+    # 3. Apply the token to the connection arguments (1256 is the constant for SQL_COPT_SS_ACCESS_TOKEN)
+    SQL_COPT_SS_ACCESS_TOKEN = 1256
+    connect_args = {"attrs_before": {SQL_COPT_SS_ACCESS_TOKEN: token_struct}}
+
+    # 4. Create the SQLAlchemy engine
+    params = urllib.parse.quote_plus(odbc_conn_str)
+    engine = create_engine(
+        f"mssql+pyodbc:///?odbc_connect={params}", connect_args=connect_args
+    )
+    return engine
+
+
 def get_live_data(outdir: str):
     ## STEP 1: GET CONTRACT DETAILS FROM TUSSELL DATA
-    # connect to db using creds
-    conn_string = "{}://{}:{}@{}:{}/{}?driver={}".format(
-        os.getenv("DB_TYPE"),
-        os.getenv("DB_USER"),
-        os.getenv("DB_PWD"),
-        os.getenv("DB_SERVER"),
-        os.getenv("DB_PORT"),
-        os.getenv("DB_NAME_TUSSELL"),
-        os.getenv("DB_DRIVER"),
+    # connect to db using token-based auth
+    engine = get_token_based_engine(
+        os.getenv("DB_SERVER"), os.getenv("DB_NAME_TUSSELL"), os.getenv("DB_DRIVER")
     )
-    engine = create_engine(conn_string)
     conn = engine.connect()
     # find GCloud 10-14 contract details
     # note that we join the Company Registration Number from a separate table, and only keep contract entries where a match is found
@@ -66,17 +96,10 @@ def get_live_data(outdir: str):
     print(f"Saved contracts data to {os.path.join(outdir, 'contracts.csv')}")
 
     ## STEP 2: GET MI DATA
-    # connect to db using creds
-    conn_string = "{}://{}:{}@{}:{}/{}?driver={}".format(
-        os.getenv("DB_TYPE"),
-        os.getenv("DB_USER"),
-        os.getenv("DB_PWD"),
-        os.getenv("DB_SERVER"),
-        os.getenv("DB_PORT"),
-        os.getenv("DB_NAME_MI"),
-        os.getenv("DB_DRIVER"),
+    # connect to db using token-based auth
+    engine = get_token_based_engine(
+        os.getenv("DB_SERVER"), os.getenv("DB_NAME_MI"), os.getenv("DB_DRIVER")
     )
-    engine = create_engine(conn_string)
     conn = engine.connect()
 
     MI_query = """
@@ -92,17 +115,10 @@ def get_live_data(outdir: str):
     print(f"Saved MI data to {os.path.join(outdir, 'mi.csv')}")
 
     ## STEP 3: GET COMPANY REGISTRATION NUMBER - SUPPLIER KEY PAIRS
-    # connect to db using creds
-    conn_string = "{}://{}:{}@{}:{}/{}?driver={}".format(
-        os.getenv("DB_TYPE"),
-        os.getenv("DB_USER"),
-        os.getenv("DB_PWD"),
-        os.getenv("DB_SERVER"),
-        os.getenv("DB_PORT"),
-        os.getenv("DB_NAME_REG"),
-        os.getenv("DB_DRIVER"),
+    # connect to db using token-based auth
+    engine = get_token_based_engine(
+        os.getenv("DB_SERVER"), os.getenv("DB_NAME_REG"), os.getenv("DB_DRIVER")
     )
-    engine = create_engine(conn_string)
     conn = engine.connect()
     # find supplier Company Registration Number and CCS SupplierKey, to join Tussell to MI data
     # also take supplier status
