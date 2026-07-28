@@ -9,6 +9,11 @@ import urllib.parse
 import urllib.request
 import urllib.error
 
+try:
+    from tqdm import tqdm
+except Exception:  # pragma: no cover - optional dependency fallback
+    tqdm = None
+
 """Utilities for calling the external matching API."""
 
 
@@ -169,6 +174,8 @@ def match_strings_via_api_concurrent(
     max_workers: int = 8,
     extra_query_params: Optional[Dict[str, str]] = None,
     api_method: Optional[str] = None,
+    show_progress: bool = False,
+    progress_desc: str = "Matching names",
 ) -> Dict[str, str]:
     """
     Concurrently resolve many input strings via match_string_via_api.
@@ -188,7 +195,15 @@ def match_strings_via_api_concurrent(
 
     if max_workers == 1:
         serial_results: Dict[str, str] = {}
-        for item in unique_inputs:
+        items_iter = unique_inputs
+        if show_progress and tqdm is not None:
+            items_iter = tqdm(
+                unique_inputs,
+                total=len(unique_inputs),
+                desc=progress_desc,
+                unit="name",
+            )
+        for item in items_iter:
             serial_results[item] = match_string_via_api(
                 input_string=item,
                 list_of_strings=list_of_strings,
@@ -216,7 +231,16 @@ def match_strings_via_api_concurrent(
             ): item
             for item in unique_inputs
         }
-        for future in as_completed(futures):
+        completed_futures = as_completed(futures)
+        if show_progress and tqdm is not None:
+            completed_futures = tqdm(
+                completed_futures,
+                total=len(futures),
+                desc=progress_desc,
+                unit="name",
+            )
+
+        for future in completed_futures:
             key = futures[future]
             results[key] = future.result()
 

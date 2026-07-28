@@ -72,6 +72,8 @@ def combine_data(contracts_data, mi_data, regno_key_pairs):
             prompt_path="./prompts/buyer_match_v2.txt",
             api_url=os.getenv("NAME_MATCH_API_ENDPOINT"),
             max_workers=int(os.getenv("MATCH_STRING_MAX_WORKERS", "8")),
+            show_progress=True,
+            progress_desc="Matching buyers via API",
         )
         unmatched_mi["AIMatchedName"] = unmatched_mi["CustomerName"].map(name_map)
         # Ensure SupplierKey is treated as an integer string, to avoid mismatches due to float representations (e.g. '123.0' vs '123')
