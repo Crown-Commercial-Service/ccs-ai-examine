@@ -14,6 +14,7 @@ from evaluation.mock_langchain_model import MockChatModelWithCandidates  # noqa:
 
 mlflow.set_tracking_uri("file:./mlruns")
 
+
 # Optional: fallback mock model
 class _MockResponse:
     def __init__(self, content: str):
@@ -28,7 +29,9 @@ def _find_col(df: pd.DataFrame, name: str) -> str:
     mapping = {c.strip().lower(): c for c in df.columns}
     if target in mapping:
         return mapping[target]
-    raise ValueError(f"Missing required column '{name}'. Found columns: {list(df.columns)}")
+    raise ValueError(
+        f"Missing required column '{name}'. Found columns: {list(df.columns)}"
+    )
 
 
 def normalise_prediction(pred: str) -> str:
@@ -40,7 +43,9 @@ def normalise_prediction(pred: str) -> str:
     p = (pred or "").strip()
 
     # remove wrapping quotes if present
-    if (p.startswith('"') and p.endswith('"')) or (p.startswith("'") and p.endswith("'")):
+    if (p.startswith('"') and p.endswith('"')) or (
+        p.startswith("'") and p.endswith("'")
+    ):
         p = p[1:-1].strip()
 
     if p.lower() in {"none", "null", "n/a", "na", ""}:
@@ -66,7 +71,6 @@ def is_negative_control(error_type: str, ground_truth: str) -> bool:
     return False
 
 
-
 def build_candidate_list(
     input_name: str,
     ground_truth: str,
@@ -74,7 +78,7 @@ def build_candidate_list(
     num_distractors: int,
     seed: int,
     is_negative: bool,
-    ) -> List[str]:
+) -> List[str]:
     """
     Build a realistic candidate list for evaluation.
     - Positive rows: ground truth + N distractors
@@ -98,6 +102,7 @@ def build_candidate_list(
     rng.shuffle(cands)
     return cands
 
+
 def sha256_file(path: str) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as f:
@@ -105,8 +110,10 @@ def sha256_file(path: str) -> str:
             h.update(chunk)
     return h.hexdigest()
 
+
 def sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
 
 def load_yaml_config(yaml_path: str) -> dict:
     p = Path(yaml_path)
@@ -114,6 +121,7 @@ def load_yaml_config(yaml_path: str) -> dict:
         return {}
     with open(p, "r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
+
 
 def get_run_description(cfg: dict, prompt_file: str) -> str | None:
     """
@@ -130,12 +138,14 @@ def get_run_description(cfg: dict, prompt_file: str) -> str | None:
             return desc.strip()
     return None
 
+
 def get_experiment_name(cfg: dict, default_name: str) -> str:
     mlflow_cfg = cfg.get("mlflow", {}) if isinstance(cfg, dict) else {}
     exp = mlflow_cfg.get("experiment_name")
     if isinstance(exp, str) and exp.strip():
         return exp.strip()
     return default_name
+
 
 def should_rerun_prompt(
     experiment_name: str,
@@ -145,7 +155,7 @@ def should_rerun_prompt(
     num_distractors: int,
     seed: int,
     similarity_threshold: float,
-    ) -> bool:
+) -> bool:
     """
     Returns True if we should rerun, False if an identical run already exists.
     """
@@ -168,6 +178,7 @@ def should_rerun_prompt(
     )
     return runs.empty  # rerun only if no matching run found
 
+
 def evaluate_prompt_on_benchmark(
     df: pd.DataFrame,
     prompt_path: str,
@@ -178,8 +189,7 @@ def evaluate_prompt_on_benchmark(
     run_name: str | None = None,
     prompt_sha: str = "",
     dataset_sha: str = "",
-    ) -> Dict[str, Any]:
-
+) -> Dict[str, Any]:
     """
     Evaluate one prompt file on the benchmark dataset and log to MLflow as one run.
     """
@@ -189,11 +199,13 @@ def evaluate_prompt_on_benchmark(
     ent_col = _find_col(df, "Entity Type")
 
     # Build candidate pool from all non-negative match options in the dataset
-    all_candidates = sorted({
-        str(x).strip()
-        for x in df[gt_col].astype(str).tolist()
-        if str(x).strip().lower() not in {"n/a", "na", "none", ""}
-    })
+    all_candidates = sorted(
+        {
+            str(x).strip()
+            for x in df[gt_col].astype(str).tolist()
+            if str(x).strip().lower() not in {"n/a", "na", "none", ""}
+        }
+    )
 
     final_run_name = run_name or Path(prompt_path).stem
 
@@ -213,7 +225,6 @@ def evaluate_prompt_on_benchmark(
         mlflow.log_param("num_distractors", num_distractors)
         mlflow.log_param("seed", seed)
 
-
         rows = []
         for _, r in df.iterrows():
             input_name = str(r[input_col]).strip()
@@ -226,14 +237,13 @@ def evaluate_prompt_on_benchmark(
             # Candidate list strategy:
             # Use the full pool for all rows (simulates real retrieval)
             candidates = build_candidate_list(
-                            input_name=input_name,
-                            ground_truth=ground_truth,
-                            all_candidates=all_candidates,
-                            num_distractors=num_distractors,
-                            seed=seed,
-                            is_negative=neg,
-                        )
-
+                input_name=input_name,
+                ground_truth=ground_truth,
+                all_candidates=all_candidates,
+                num_distractors=num_distractors,
+                seed=seed,
+                is_negative=neg,
+            )
 
             pred_raw = match_string_via_api(
                 input_string=input_name,
@@ -244,20 +254,22 @@ def evaluate_prompt_on_benchmark(
             pred = normalise_prediction(pred_raw)
 
             if neg:
-                correct = (pred == "None")
+                correct = pred == "None"
             else:
                 # must match exactly the ground truth string
-                correct = (pred == ground_truth)
+                correct = pred == ground_truth
 
-            rows.append({
-                "input_name": input_name,
-                "ground_truth": ground_truth,
-                "prediction": pred,
-                "correct": int(correct),
-                "error_type": error_type,
-                "entity_type": entity_type,
-                "is_negative_control": int(neg),
-            })
+            rows.append(
+                {
+                    "input_name": input_name,
+                    "ground_truth": ground_truth,
+                    "prediction": pred,
+                    "correct": int(correct),
+                    "error_type": error_type,
+                    "entity_type": entity_type,
+                    "is_negative_control": int(neg),
+                }
+            )
 
         out = pd.DataFrame(rows)
 
@@ -306,7 +318,9 @@ def evaluate_prompt_on_benchmark(
         mlflow.log_artifact(str(summary_path))
         mlflow.log_artifact(prompt_path)
 
-        print(f"\nPROMPT: {Path(prompt_path).name}\nRUN NAME: {final_run_name}\nSUMMARY: {summary}")
+        print(
+            f"\nPROMPT: {Path(prompt_path).name}\nRUN NAME: {final_run_name}\nSUMMARY: {summary}"
+        )
         return summary
 
 
@@ -335,7 +349,9 @@ def main():
 
     prompt_files = sorted(Path("prompts").glob("buyer_match_v*.txt"))
     if not prompt_files:
-        raise FileNotFoundError("No prompt files found. Expected prompts/buyer_match_v*.txt")
+        raise FileNotFoundError(
+            "No prompt files found. Expected prompts/buyer_match_v*.txt"
+        )
 
     # Keep these consistent with what you log and search
     similarity_threshold = 0.85

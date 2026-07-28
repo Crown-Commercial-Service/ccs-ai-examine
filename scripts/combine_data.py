@@ -65,6 +65,7 @@ def combine_data(contracts_data, mi_data, regno_key_pairs):
     # Set MATCH_STRING_API_URL to your external `GET /match` endpoint.
     if not unmatched_mi.empty:
         unique_unmatched_customers = unmatched_mi["CustomerName"].unique().tolist()
+        print(f"Total unique unmatched customers = {len(unique_unmatched_customers)}")
         name_map = match_strings_via_api_concurrent(
             input_strings=unique_unmatched_customers,
             list_of_strings=buyer_names_from_contracts,

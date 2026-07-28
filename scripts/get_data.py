@@ -195,9 +195,9 @@ def generate_dummy_contracts_data():
             ]
         ],
         "contract_months": [12, 36, 36, 36, 24, 6, 24],
-        "contract_title": [f"Contract {i+1}" for i in range(7)],
+        "contract_title": [f"Contract {i + 1}" for i in range(7)],
         "contract_description": [
-            f"Description for contract {i+1}, with commas that need to be handled when parsing"
+            f"Description for contract {i + 1}, with commas that need to be handled when parsing"
             for i in range(7)
         ],
         "award_value": [1e6, 2.5e6, 5e6, 7.5e6, 10e6, 1e6, 3e6],

@@ -4,9 +4,11 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import List
 
+
 @dataclass
 class MockResponse:
     content: str
+
 
 @dataclass
 class MockChatModelWithCandidates:

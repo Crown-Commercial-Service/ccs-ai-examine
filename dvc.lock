@@ -1,32 +1,32 @@
 schema: '2.0'
 stages:
   get_data:
-    cmd: python scripts/get_data.py --mode dummy --outdir data/dummy
+    cmd: python scripts/get_data.py --mode live --outdir data/live
     deps:
     - path: params.yaml
       hash: md5
-      md5: 266eb5edb3f304529774aeae34848ead
-      size: 48
+      md5: 116fcf410ede6c1c3dc349e9e73a4988
+      size: 47
     - path: scripts/get_data.py
       hash: md5
-      md5: 5736d87ee715209650806484703bcb3f
-      size: 9688
+      md5: 1ae7faebe9c263ce95dda5933f323f70
+      size: 11605
     params:
       params.yaml:
-        data_mode: dummy
+        data_mode: live
     outs:
-    - path: data/dummy/contracts.csv
+    - path: data/live/contracts.csv
       hash: md5
-      md5: 5adefbc408333ea351b087d8e6746d20
-      size: 1453
-    - path: data/dummy/mi.csv
+      md5: b24def1778925976e8cb57b22897fec5
+      size: 9125525
+    - path: data/live/mi.csv
       hash: md5
-      md5: b6d2deb4652974113c858b914f051c6b
-      size: 740
-    - path: data/dummy/reg_number_supplier_key.csv
+      md5: ad87e676456754760ab490ccd0f61a49
+      size: 74595615
+    - path: data/live/reg_number_supplier_key.csv
       hash: md5
-      md5: 4457625db7c052547e8bf044ef879f83
-      size: 101
+      md5: fe808f0123523d595f348cd8cb325ca0
+      size: 585800
   combine:
     cmd: python scripts/combine_data.py --indir data/dummy --outdir data/dummy
     deps:
@@ -48,12 +48,12 @@ stages:
       size: 48
     - path: scripts/combine_data.py
       hash: md5
-      md5: 0e1c2e9789b08969ffeba3f72f984434
-      size: 5115
+      md5: fbe4e7e054b37772dbdbb367e5c6ccfd
+      size: 5030
     - path: utils.py
       hash: md5
-      md5: 02ff6875eae2d6ce2f78e4746e71e7d9
-      size: 3793
+      md5: 9d3875243d147e43dc968b8e6ffb057f
+      size: 5735
     params:
       params.yaml:
         data_mode: dummy
@@ -87,19 +87,19 @@ stages:
       size: 48
     - path: scripts/summarise_data.py
       hash: md5
-      md5: bb4169f19390292907a036305b4d1fb1
-      size: 4003
+      md5: 22dced82788c8b5a93e6f775a98758b1
+      size: 4308
     params:
       params.yaml:
         data_mode: dummy
     outs:
     - path: data/dummy/line_level.csv
       hash: md5
-      md5: de508b9b00024eaf882e834b6401dcae
+      md5: 391f0d1c269a874935c985f3a6c6c697
       size: 1441
     - path: data/dummy/summary_stats.csv
       hash: md5
-      md5: 630d10c75cd3462a57c8935045f6dec0
+      md5: 6035607410f2649b78f1adcb9edbd034
       size: 273
   get_data@dummy:
     cmd: python scripts/get_data.py --mode dummy --outdir data/dummy

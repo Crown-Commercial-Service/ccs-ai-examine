@@ -13,7 +13,11 @@ def test_match_string_via_api_returns_exact_candidate(monkeypatch):
         assert qs["candidates"] == ["Cabinet Office", "HM Treasury"]
         assert qs["prompt_path"] == ["prompts/buyer_match_v1.txt"]
 
-        body = {"input_string": "Home Office", "match": "Cabinet Office", "raw": "Cabinet Office"}
+        body = {
+            "input_string": "Home Office",
+            "match": "Cabinet Office",
+            "raw": "Cabinet Office",
+        }
         return 200, json.dumps(body)
 
     monkeypatch.setenv("MATCH_STRING_API_URL", "http://example.test/match")
@@ -41,7 +45,11 @@ def test_match_string_via_api_null_match_becomes_None(monkeypatch):
 
 def test_match_string_via_api_rejects_non_candidate(monkeypatch):
     def _fake_http_get(url: str, timeout_s: float = 60.0):
-        body = {"input_string": "X", "match": "Not a candidate", "raw": "Not a candidate"}
+        body = {
+            "input_string": "X",
+            "match": "Not a candidate",
+            "raw": "Not a candidate",
+        }
         return 200, json.dumps(body)
 
     monkeypatch.setenv("MATCH_STRING_API_URL", "http://example.test/match")
@@ -71,6 +79,52 @@ def test_match_string_via_api_propagates_http_errors(monkeypatch):
 
     with pytest.raises(RuntimeError, match="Match API error 500: boom"):
         utils.match_string_via_api(input_string="X", list_of_strings=["A", "B"])
+
+
+def test_match_string_via_api_retries_with_post_on_431(monkeypatch):
+    calls = {"get": 0, "post": 0}
+
+    def _fake_http_get(url: str, timeout_s: float = 60.0):
+        calls["get"] += 1
+        raise RuntimeError("Match API error 431: Request Header Fields Too Large")
+
+    def _fake_http_post_json(url: str, payload, timeout_s: float = 60.0):
+        calls["post"] += 1
+        assert payload["input_string"] == "Home Office"
+        assert "Cabinet Office" in payload["candidates"]
+        body = {
+            "input_string": "Home Office",
+            "match": "Cabinet Office",
+            "raw": "Cabinet Office",
+        }
+        return 200, json.dumps(body)
+
+    monkeypatch.setenv("MATCH_STRING_API_URL", "http://example.test/match")
+    monkeypatch.setattr(utils, "_http_get", _fake_http_get)
+    monkeypatch.setattr(utils, "_http_post_json", _fake_http_post_json)
+
+    out = utils.match_string_via_api(
+        input_string="Home Office",
+        list_of_strings=["Home Office", "Cabinet Office", "HM Treasury"],
+    )
+
+    assert calls == {"get": 1, "post": 1}
+    assert out == "Cabinet Office"
+
+
+def test_match_string_via_api_uses_post_when_configured(monkeypatch):
+    def _fake_http_post_json(url: str, payload, timeout_s: float = 60.0):
+        assert url == "http://example.test/match"
+        assert payload["input_string"] == "X"
+        assert payload["candidates"] == ["A", "B"]
+        return 200, json.dumps({"input_string": "X", "match": "A", "raw": "A"})
+
+    monkeypatch.setenv("MATCH_STRING_API_URL", "http://example.test/match")
+    monkeypatch.setenv("MATCH_STRING_API_METHOD", "POST")
+    monkeypatch.setattr(utils, "_http_post_json", _fake_http_post_json)
+
+    out = utils.match_string_via_api(input_string="X", list_of_strings=["A", "B"])
+    assert out == "A"
 
 
 def test_match_strings_via_api_concurrent_returns_mapping(monkeypatch):
@@ -111,6 +165,7 @@ def test_match_strings_via_api_concurrent_uses_expected_worker_count(monkeypatch
         api_url=None,
         timeout_s=60.0,
         extra_query_params=None,
+        api_method=None,
     ):
         return "A"
 
@@ -147,4 +202,3 @@ def test_match_strings_via_api_concurrent_uses_expected_worker_count(monkeypatch
     # unique inputs are ["x", "y"], so worker count is capped at 2.
     assert observed["max_workers"] == 2
     assert out == {"x": "A", "y": "A"}
-

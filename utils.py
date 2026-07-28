@@ -11,6 +11,7 @@ import urllib.error
 
 """Utilities for calling the external matching API."""
 
+
 def _http_get(url: str, timeout_s: float = 60.0) -> Tuple[int, str]:
     """
     Internal helper: HTTP GET and return (status_code, response_text).
@@ -33,6 +34,32 @@ def _http_get(url: str, timeout_s: float = 60.0) -> Tuple[int, str]:
         raise RuntimeError(f"Match API connection error: {e}") from e
 
 
+def _http_post_json(
+    url: str, payload: Dict[str, Any], timeout_s: float = 60.0
+) -> Tuple[int, str]:
+    """
+    Internal helper: HTTP POST JSON and return (status_code, response_text).
+    """
+    body = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(url, data=body, method="POST")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Accept", "application/json")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout_s) as resp:
+            status = int(getattr(resp, "status", 200) or 200)
+            text = resp.read().decode("utf-8", errors="replace")
+            return status, text
+    except urllib.error.HTTPError as e:
+        body_text = ""
+        try:
+            body_text = (e.read() or b"").decode("utf-8", errors="replace")
+        except Exception:
+            body_text = ""
+        raise RuntimeError(f"Match API error {e.code}: {body_text}") from e
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"Match API connection error: {e}") from e
+
+
 def match_string_via_api(
     input_string: str,
     list_of_strings: List[str],
@@ -40,12 +67,15 @@ def match_string_via_api(
     api_url: Optional[str] = None,
     timeout_s: float = 60.0,
     extra_query_params: Optional[Dict[str, str]] = None,
+    api_method: Optional[str] = None,
 ) -> str:
     """
     Call the external matching API (GET /match) instead of running LangChain locally.
 
     Expected endpoint signature (FastAPI):
       - GET /match?input_string=...&candidates=...&candidates=...&prompt_path=...
+      - OR POST /match with JSON body
+        {"input_string": "...", "candidates": [...], "prompt_path": "..."}
 
     Expected response body:
       { "input_string": "...", "match": "<candidate>|null", "raw": "..." }
@@ -57,12 +87,20 @@ def match_string_via_api(
     Configuration:
       - api_url parameter OR env var MATCH_STRING_API_URL must be set to the full URL
         of the `/match` endpoint.
+      - api_method parameter OR env var MATCH_STRING_API_METHOD can be set to GET/POST.
+        Defaults to GET; when GET fails with HTTP 431 it automatically retries with POST.
     """
     resolved_api_url = api_url or os.getenv("MATCH_STRING_API_URL")
     if not resolved_api_url:
         raise ValueError(
             "No API URL provided. Set MATCH_STRING_API_URL or pass api_url=... to match_string_via_api()."
         )
+
+    resolved_api_method = (
+        (api_method or os.getenv("MATCH_STRING_API_METHOD", "GET")).strip().upper()
+    )
+    if resolved_api_method not in {"GET", "POST"}:
+        raise ValueError("api_method must be GET or POST")
 
     # Remove input string from candidates if present
     candidates = [i for i in list_of_strings if i != input_string]
@@ -76,10 +114,23 @@ def match_string_via_api(
     if extra_query_params:
         query.update(extra_query_params)
 
-    qs = urllib.parse.urlencode(query, doseq=True)
-    url = resolved_api_url + ("&" if "?" in resolved_api_url else "?") + qs
+    status: int
+    text: str
+    if resolved_api_method == "POST":
+        status, text = _http_post_json(resolved_api_url, query, timeout_s=timeout_s)
+    else:
+        qs = urllib.parse.urlencode(query, doseq=True)
+        url = resolved_api_url + ("&" if "?" in resolved_api_url else "?") + qs
+        try:
+            status, text = _http_get(url, timeout_s=timeout_s)
+        except RuntimeError as e:
+            if "Match API error 431:" in str(e):
+                status, text = _http_post_json(
+                    resolved_api_url, query, timeout_s=timeout_s
+                )
+            else:
+                raise
 
-    status, text = _http_get(url, timeout_s=timeout_s)
     if status < 200 or status >= 300:
         raise RuntimeError(f"Match API returned status {status}: {text}")
 
@@ -117,6 +168,7 @@ def match_strings_via_api_concurrent(
     timeout_s: float = 60.0,
     max_workers: int = 8,
     extra_query_params: Optional[Dict[str, str]] = None,
+    api_method: Optional[str] = None,
 ) -> Dict[str, str]:
     """
     Concurrently resolve many input strings via match_string_via_api.
@@ -144,6 +196,7 @@ def match_strings_via_api_concurrent(
                 api_url=api_url,
                 timeout_s=timeout_s,
                 extra_query_params=extra_query_params,
+                api_method=api_method,
             )
         return serial_results
 
@@ -159,6 +212,7 @@ def match_strings_via_api_concurrent(
                 api_url=api_url,
                 timeout_s=timeout_s,
                 extra_query_params=extra_query_params,
+                api_method=api_method,
             ): item
             for item in unique_inputs
         }
