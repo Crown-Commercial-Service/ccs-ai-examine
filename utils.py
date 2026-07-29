@@ -90,15 +90,15 @@ def match_string_via_api(
       - "None"
 
     Configuration:
-      - api_url parameter OR env var MATCH_STRING_API_URL must be set to the full URL
+      - api_url parameter OR env var NAME_MATCH_API_ENDPOINT must be set to the full URL
         of the `/match` endpoint.
       - api_method parameter OR env var MATCH_STRING_API_METHOD can be set to GET/POST.
         Defaults to GET; when GET fails with HTTP 431 it automatically retries with POST.
     """
-    resolved_api_url = api_url or os.getenv("MATCH_STRING_API_URL")
+    resolved_api_url = api_url or os.getenv("NAME_MATCH_API_ENDPOINT")
     if not resolved_api_url:
         raise ValueError(
-            "No API URL provided. Set MATCH_STRING_API_URL or pass api_url=... to match_string_via_api()."
+            "No API URL provided. Set NAME_MATCH_API_ENDPOINT or pass api_url=... to match_string_via_api()."
         )
 
     resolved_api_method = (
