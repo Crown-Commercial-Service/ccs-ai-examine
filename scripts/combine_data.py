@@ -5,6 +5,33 @@ from dotenv import load_dotenv
 from utils import match_strings_via_api_concurrent
 
 
+def _usable_name_mask(series):
+    """Return rows containing real, nonblank names (not NaN/None)."""
+    return series.notna() & series.astype(str).str.strip().ne("")
+
+
+def _report_missing_customer_names(mi, mask):
+    """Print enough source-row context to find invalid API inputs in the CSV."""
+    invalid = mi.loc[~mask]
+    if invalid.empty:
+        return
+
+    # DataFrame index 0 is CSV line 2 because line 1 contains the headings.
+    examples = []
+    for index, row in invalid.head(10).iterrows():
+        examples.append(
+            f"csv_line={index + 2}, dataframe_index={index}, "
+            f"CustomerName={row.get('CustomerName')!r}, "
+            f"SupplierKey={row.get('SupplierKey')!r}"
+        )
+    print(
+        f"WARNING: {len(invalid)} MI row(s) have a missing or blank CustomerName. "
+        "They will not be sent to the name-match API and will remain unmatched. "
+        f"Examples: {'; '.join(examples)}",
+        flush=True,
+    )
+
+
 def combine_data(contracts_data, mi_data, regno_key_pairs):
     """Combines contracts data with MI data
     Args:
@@ -33,6 +60,10 @@ def combine_data(contracts_data, mi_data, regno_key_pairs):
             f"Registration number - supplier key data file {regno_key_pairs} does not exist"
         )
 
+    # Report malformed source data before string operations turn NaN into an opaque API error.
+    valid_mi_customer = _usable_name_mask(mi["CustomerName"])
+    _report_missing_customer_names(mi, valid_mi_customer)
+
     # add supplier key onto contracts df
     contracts = contracts.merge(
         regno_keys, on="SupplierCompanyRegistrationNumber", how="inner"
@@ -51,14 +82,25 @@ def combine_data(contracts_data, mi_data, regno_key_pairs):
     # Situation 2. the buyer name in the MI doesn't match to one in the contract data, and we need an LLM to find a match
     # we can safely ignore Situation 1: if the name matches, we would already have caught it in the initial join, and all the LLM will return is its input
     unmatched_mi_all = mi[~matched_pair_ids]
+    # Do not send missing CustomerName values to the API. They cannot be matched and
+    # are retained in the final unmatched output.
+    unmatched_mi_all_valid = unmatched_mi_all.loc[
+        _usable_name_mask(unmatched_mi_all["CustomerName"])
+    ]
     # ignore Situation 1
-    buyer_names_from_contracts = contracts["buyer"].unique().tolist()
-    mi_buyer_names_to_ignore = unmatched_mi_all[
-        unmatched_mi_all["CustomerName"].isin(buyer_names_from_contracts)
+    buyer_names_from_contracts = (
+        contracts.loc[_usable_name_mask(contracts["buyer"]), "buyer"]
+        .astype(str)
+        .str.strip()
+        .unique()
+        .tolist()
+    )
+    mi_buyer_names_to_ignore = unmatched_mi_all_valid[
+        unmatched_mi_all_valid["CustomerName"].isin(buyer_names_from_contracts)
     ]["CustomerName"]
     # focus on Situation 2
-    unmatched_mi = unmatched_mi_all[
-        ~unmatched_mi_all["CustomerName"].isin(mi_buyer_names_to_ignore)
+    unmatched_mi = unmatched_mi_all_valid[
+        ~unmatched_mi_all_valid["CustomerName"].isin(mi_buyer_names_to_ignore)
     ].copy()
 
     # Matching is handled by the external API.
@@ -86,8 +128,10 @@ def combine_data(contracts_data, mi_data, regno_key_pairs):
         contracts_with_mi_AI = contracts.merge(unmatched_mi, on="PairID", how="left")
 
         contracts_with_mi = pd.concat([contracts_with_mi, contracts_with_mi_AI])
-        matched_pair_ids = mi["PairID"].isin(contracts_with_mi["PairID"])
-        unmatched_mi = mi[~matched_pair_ids]
+
+    # Recalculate against the full MI table so skipped null names remain unmatched.
+    matched_pair_ids = mi["PairID"].isin(contracts_with_mi["PairID"])
+    unmatched_mi = mi[~matched_pair_ids]
 
     return (contracts_with_mi, unmatched_mi)
 

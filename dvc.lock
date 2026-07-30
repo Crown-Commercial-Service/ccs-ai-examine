@@ -9,24 +9,24 @@ stages:
       size: 47
     - path: scripts/get_data.py
       hash: md5
-      md5: 1ae7faebe9c263ce95dda5933f323f70
-      size: 11605
+      md5: cc22a04aa641138943de87a4851c669d
+      size: 11609
     params:
       params.yaml:
         data_mode: live
     outs:
     - path: data/live/contracts.csv
       hash: md5
-      md5: b24def1778925976e8cb57b22897fec5
-      size: 9125525
+      md5: 6302dd99661e6463a8007a64e5b8b185
+      size: 9437365
     - path: data/live/mi.csv
       hash: md5
-      md5: ad87e676456754760ab490ccd0f61a49
-      size: 74595615
+      md5: 9b01611f5a14420a01439edf1b574a7a
+      size: 74606317
     - path: data/live/reg_number_supplier_key.csv
       hash: md5
-      md5: fe808f0123523d595f348cd8cb325ca0
-      size: 585800
+      md5: 3952496d6889eb93d68a089b83a0789b
+      size: 586264
   combine:
     cmd: python scripts/combine_data.py --indir data/dummy --outdir data/dummy
     deps:
