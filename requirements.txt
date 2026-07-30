@@ -22,3 +22,5 @@ pytest
 PyYAML
 dvc
 Werkzeug==3.1.5
+git+https://github.com/DavisAgyemang/ccss_web_api_tool.git
+azure-identity

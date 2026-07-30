@@ -9,8 +9,8 @@ stages:
       size: 48
     - path: scripts/get_data.py
       hash: md5
-      md5: 5736d87ee715209650806484703bcb3f
-      size: 9688
+      md5: 2db541bf01187b15f2168356739065f7
+      size: 10672
     params:
       params.yaml:
         data_mode: dummy
@@ -48,20 +48,20 @@ stages:
       size: 48
     - path: scripts/combine_data.py
       hash: md5
-      md5: 0e1c2e9789b08969ffeba3f72f984434
-      size: 5115
+      md5: 0a2b303572da3903557304da3c6848f0
+      size: 4943
     - path: utils.py
       hash: md5
-      md5: 02ff6875eae2d6ce2f78e4746e71e7d9
-      size: 3793
+      md5: 9d3875243d147e43dc968b8e6ffb057f
+      size: 5735
     params:
       params.yaml:
         data_mode: dummy
     outs:
     - path: data/dummy/combined.csv
       hash: md5
-      md5: d6b31c0ddcea9b9b579c628b011b0a54
-      size: 4173
+      md5: 3e2d71f4c1cae2817e0d5f0c702d8838
+      size: 4243
     - path: data/dummy/unmatched.csv
       hash: md5
       md5: 76b99689bbe0b6243fe78a5464ea51e0
@@ -71,8 +71,8 @@ stages:
     deps:
     - path: data/dummy/combined.csv
       hash: md5
-      md5: d6b31c0ddcea9b9b579c628b011b0a54
-      size: 4173
+      md5: 3e2d71f4c1cae2817e0d5f0c702d8838
+      size: 4243
     - path: data/dummy/contracts.csv
       hash: md5
       md5: 5adefbc408333ea351b087d8e6746d20
@@ -87,19 +87,19 @@ stages:
       size: 48
     - path: scripts/summarise_data.py
       hash: md5
-      md5: bb4169f19390292907a036305b4d1fb1
-      size: 4003
+      md5: 22dced82788c8b5a93e6f775a98758b1
+      size: 4308
     params:
       params.yaml:
         data_mode: dummy
     outs:
     - path: data/dummy/line_level.csv
       hash: md5
-      md5: de508b9b00024eaf882e834b6401dcae
+      md5: 9e9dc46fcf01c4378495c7fb63e59174
       size: 1441
     - path: data/dummy/summary_stats.csv
       hash: md5
-      md5: 630d10c75cd3462a57c8935045f6dec0
+      md5: 6035607410f2649b78f1adcb9edbd034
       size: 273
   get_data@dummy:
     cmd: python scripts/get_data.py --mode dummy --outdir data/dummy
