@@ -64,30 +64,21 @@ def combine_data(contracts_data, mi_data, regno_key_pairs):
     valid_mi_customer = _usable_name_mask(mi["CustomerName"])
     _report_missing_customer_names(mi, valid_mi_customer)
 
-    # add supplier key onto contracts df
     contracts = contracts.merge(
         regno_keys, on="SupplierCompanyRegistrationNumber", how="inner"
     )
-    # add a unique reference value called "PairID" to each row of contracts and MI by concatenating the names of the buyer and supplier
-    # lowercase the buyer names to avoid case differences throwing off the join
     contracts["PairID"] = (
         contracts["SupplierKey"].astype(str) + "+" + contracts["buyer"].str.lower()
     )
     mi["PairID"] = mi["SupplierKey"].astype(str) + "+" + mi["CustomerName"].str.lower()
-    # join MI onto contracts
     contracts_with_mi = contracts.merge(mi, on="PairID", how="left")
     matched_pair_ids = mi["PairID"].isin(contracts_with_mi["PairID"])
-    # find the unmatched MI, which may be because
-    # Situation 1. the buyer name in the MI matches to one in the contract data, and there is simply no contract with a supplier
-    # Situation 2. the buyer name in the MI doesn't match to one in the contract data, and we need an LLM to find a match
-    # we can safely ignore Situation 1: if the name matches, we would already have caught it in the initial join, and all the LLM will return is its input
     unmatched_mi_all = mi[~matched_pair_ids]
-    # Do not send missing CustomerName values to the API. They cannot be matched and
-    # are retained in the final unmatched output.
+    # Missing names are deliberately retained in the final unmatched file, but are
+    # never sent to the API.
     unmatched_mi_all_valid = unmatched_mi_all.loc[
         _usable_name_mask(unmatched_mi_all["CustomerName"])
     ]
-    # ignore Situation 1
     buyer_names_from_contracts = (
         contracts.loc[_usable_name_mask(contracts["buyer"]), "buyer"]
         .astype(str)
@@ -98,41 +89,42 @@ def combine_data(contracts_data, mi_data, regno_key_pairs):
     mi_buyer_names_to_ignore = unmatched_mi_all_valid[
         unmatched_mi_all_valid["CustomerName"].isin(buyer_names_from_contracts)
     ]["CustomerName"]
-    # focus on Situation 2
     unmatched_mi = unmatched_mi_all_valid[
         ~unmatched_mi_all_valid["CustomerName"].isin(mi_buyer_names_to_ignore)
     ].copy()
 
-    # Matching is handled by the external API.
-    # Set MATCH_STRING_API_URL to your external `GET /match` endpoint.
     if not unmatched_mi.empty:
         unique_unmatched_customers = unmatched_mi["CustomerName"].unique().tolist()
-        print(f"Total unique unmatched customers = {len(unique_unmatched_customers)}")
+        workers = int(os.getenv("MATCH_STRING_MAX_WORKERS", "4"))
+        timeout_s = float(os.getenv("MATCH_STRING_TIMEOUT_SECONDS", "60"))
+        method = os.getenv("MATCH_STRING_API_METHOD", "POST")
+        print(
+            f"Total unique unmatched customers = {len(unique_unmatched_customers)}; "
+            f"API workers={workers}, timeout={timeout_s}s, method={method}",
+            flush=True,
+        )
         name_map = match_strings_via_api_concurrent(
             input_strings=unique_unmatched_customers,
             list_of_strings=buyer_names_from_contracts,
             prompt_path="./prompts/buyer_match_v2.txt",
             api_url=os.getenv("NAME_MATCH_API_ENDPOINT"),
-            max_workers=int(os.getenv("MATCH_STRING_MAX_WORKERS", "8")),
+            timeout_s=timeout_s,
+            max_workers=workers,
+            api_method=method,
             show_progress=True,
             progress_desc="Matching buyers via API",
         )
         unmatched_mi["AIMatchedName"] = unmatched_mi["CustomerName"].map(name_map)
-        # Ensure SupplierKey is treated as an integer string, to avoid mismatches due to float representations (e.g. '123.0' vs '123')
         unmatched_mi["PairID"] = (
             unmatched_mi["SupplierKey"].astype("Int64").astype(str)
             + "+"
             + unmatched_mi["AIMatchedName"].str.lower()
         )
-        # join unmatched MI onto contracts
         contracts_with_mi_AI = contracts.merge(unmatched_mi, on="PairID", how="left")
-
         contracts_with_mi = pd.concat([contracts_with_mi, contracts_with_mi_AI])
 
-    # Recalculate against the full MI table so skipped null names remain unmatched.
     matched_pair_ids = mi["PairID"].isin(contracts_with_mi["PairID"])
     unmatched_mi = mi[~matched_pair_ids]
-
     return (contracts_with_mi, unmatched_mi)
 
 
