@@ -1,39 +1,35 @@
 from __future__ import annotations
 
+"""Utilities for batched calls to the external name-matching API."""
+
 import json
+import logging
 import os
 import random
+import re
 import socket
 import sys
 import threading
 import time
 import urllib.error
-import urllib.parse
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from typing import Any, Dict, List, Optional, Tuple
 
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_random_exponential
 
 try:
     from tqdm import tqdm
-except Exception:  # pragma: no cover - optional dependency fallback
+except Exception:  # pragma: no cover
     tqdm = None
 
-"""Utilities for calling the external matching API."""
+logger = logging.getLogger("name-match")
+_RETRYABLE = {408, 425, 429, 500, 502, 503, 504}
 
 
 class MatchAPIError(RuntimeError):
-    """An HTTP or network failure while calling the name-match API."""
-
-    def __init__(
-        self,
-        message: str,
-        *,
-        status: Optional[int] = None,
-        retryable: bool = False,
-        retry_after_s: Optional[float] = None,
-    ) -> None:
+    def __init__(self, message: str, *, status: Optional[int] = None,
+                 retryable: bool = False, retry_after_s: Optional[float] = None) -> None:
         super().__init__(message)
         self.status = status
         self.retryable = retryable
@@ -41,21 +37,30 @@ class MatchAPIError(RuntimeError):
 
 
 def _diagnostic(message: str) -> None:
-    """Write a timestamped diagnostic that is visible in DVC's captured output."""
-    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{timestamp}] [name-match] {message}", file=sys.stderr, flush=True)
+    stamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{stamp}] [name-match] {message}", file=sys.stderr, flush=True)
 
 
-def _retry_after_seconds(headers: Any) -> Optional[float]:
-    if headers is None:
-        return None
-    value = headers.get("Retry-After")
-    if not value:
-        return None
-    try:
-        return max(0.0, float(value))
-    except (TypeError, ValueError):
-        return None
+def _retry_after_seconds(headers: Any, body: str = "") -> Optional[float]:
+    value = headers.get("Retry-After") if headers is not None else None
+    if value:
+        try:
+            return max(0.0, float(value))
+        except (TypeError, ValueError):
+            pass
+    match = re.search(r"retry after\s+(\d+(?:\.\d+)?)\s*(ms|milliseconds?|s|seconds?)", body, re.I)
+    if match:
+        amount = float(match.group(1))
+        return amount / 1000 if match.group(2).lower().startswith("m") else amount
+    return None
+
+
+def _contains_upstream_429(body: str) -> bool:
+    """Detect an Azure 429 incorrectly wrapped by the FastAPI service as HTTP 500."""
+    lowered = body.lower()
+    return "429" in lowered and any(
+        marker in lowered for marker in ("rate_limit", "rate limit", "too_many_requests")
+    )
 
 
 def _http_error(error: urllib.error.HTTPError) -> MatchAPIError:
@@ -63,292 +68,352 @@ def _http_error(error: urllib.error.HTTPError) -> MatchAPIError:
         body = (error.read() or b"").decode("utf-8", errors="replace")
     except Exception:
         body = ""
-
-    # Azure App Service sometimes returns 403 with its own HTML "Web App -
-    # Unavailable" page when the app is unavailable or access is blocked. A normal
-    # application/authentication 403 is permanent and must not be hammered.
+    effective_status = 429 if _contains_upstream_429(body) else error.code
     azure_unavailable = error.code == 403 and (
         "Web App - Unavailable" in body or "attempted to reach has blocked" in body
     )
-    retryable = error.code in {408, 425, 429, 500, 502, 503, 504} or azure_unavailable
-    body_summary = " ".join(body.split())[:1000]
+    summary = " ".join(body.split())[:1000]
     return MatchAPIError(
-        f"Match API error {error.code}: {body_summary}",
-        status=error.code,
-        retryable=retryable,
-        retry_after_s=_retry_after_seconds(error.headers),
+        f"Match API error {error.code}: {summary}",
+        status=effective_status,
+        retryable=effective_status in _RETRYABLE or azure_unavailable,
+        retry_after_s=_retry_after_seconds(error.headers, body),
     )
 
 
-def _http_get(url: str, timeout_s: float = 60.0) -> Tuple[int, str]:
-    """HTTP GET and return (status_code, response_text)."""
-    req = urllib.request.Request(url, method="GET")
-    try:
-        with urllib.request.urlopen(req, timeout=timeout_s) as resp:
-            status = int(getattr(resp, "status", 200) or 200)
-            text = resp.read().decode("utf-8", errors="replace")
-            return status, text
-    except urllib.error.HTTPError as error:
-        raise _http_error(error) from error
-    except (urllib.error.URLError, TimeoutError, socket.timeout) as error:
-        raise MatchAPIError(
-            f"Match API connection/timeout error after {timeout_s}s: {error!r}",
-            retryable=True,
-        ) from error
-
-
-def _http_post_json(
-    url: str, payload: Dict[str, Any], timeout_s: float = 60.0
-) -> Tuple[int, str]:
-    """HTTP POST JSON and return (status_code, response_text)."""
-    # Reject NaN/Infinity locally and show the exact field instead of sending invalid JSON.
+def _http_post_json(url: str, payload: Dict[str, Any], timeout_s: float = 60.0) -> Tuple[int, str]:
     try:
         body = json.dumps(payload, allow_nan=False).encode("utf-8")
-    except (TypeError, ValueError) as error:
-        raise ValueError(f"Invalid match API JSON payload: {error}; payload={payload!r}") from error
-
-    req = urllib.request.Request(url, data=body, method="POST")
-    req.add_header("Content-Type", "application/json")
-    req.add_header("Accept", "application/json")
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid match API JSON payload: {exc}") from exc
+    request = urllib.request.Request(
+        url, data=body, method="POST", headers={"Content-Type": "application/json", "Accept": "application/json"}
+    )
     try:
-        with urllib.request.urlopen(req, timeout=timeout_s) as resp:
-            status = int(getattr(resp, "status", 200) or 200)
-            text = resp.read().decode("utf-8", errors="replace")
-            return status, text
-    except urllib.error.HTTPError as error:
-        raise _http_error(error) from error
-    except (urllib.error.URLError, TimeoutError, socket.timeout) as error:
+        with urllib.request.urlopen(request, timeout=timeout_s) as response:
+            return int(getattr(response, "status", 200) or 200), response.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as exc:
+        raise _http_error(exc) from exc
+    except (urllib.error.URLError, TimeoutError, socket.timeout) as exc:
         raise MatchAPIError(
-            f"Match API connection/timeout error after {timeout_s}s: {error!r}",
-            retryable=True,
-        ) from error
+            f"Match API connection/timeout error after {timeout_s}s: {exc!r}", retryable=True
+        ) from exc
 
 
-def match_string_via_api(
-    input_string: str,
-    list_of_strings: List[str],
-    prompt_path: Optional[str] = None,
-    api_url: Optional[str] = None,
-    timeout_s: float = 60.0,
-    extra_query_params: Optional[Dict[str, str]] = None,
-    api_method: Optional[str] = None,
-) -> str:
-    """Call the external matching API and return an exact candidate or ``None``."""
-    resolved_api_url = api_url or os.getenv("NAME_MATCH_API_ENDPOINT") or os.getenv("MATCH_STRING_API_URL")
-    if not resolved_api_url:
-        raise ValueError(
-            "No API URL provided. Set NAME_MATCH_API_ENDPOINT or pass api_url=... "
-            "to match_string_via_api()."
-        )
+def _resolved_api_url(api_url: Optional[str]) -> str:
+    value = api_url or os.getenv("NAME_MATCH_API_ENDPOINT") or os.getenv("MATCH_STRING_API_URL")
+    if not value:
+        raise ValueError("Set NAME_MATCH_API_ENDPOINT or MATCH_STRING_API_URL, or pass api_url")
+    return value
 
-    resolved_api_method = (api_method or os.getenv("MATCH_STRING_API_METHOD", "GET")).strip().upper()
-    if resolved_api_method not in {"GET", "POST"}:
-        raise ValueError("api_method must be GET or POST")
 
-    if input_string is None or not str(input_string).strip() or str(input_string).strip().lower() == "nan":
-        raise ValueError(f"input_string must be a real, nonblank name; got {input_string!r}")
+def _valid_input(value: Any) -> bool:
+    return value is not None and bool(str(value).strip()) and str(value).strip().lower() != "nan"
 
-    candidates = [item for item in list_of_strings if item != input_string]
-    query: Dict[str, Any] = {"input_string": input_string, "candidates": candidates}
+
+def match_batch_via_api(
+    input_strings: List[str], list_of_strings: List[str], prompt_path: Optional[str] = None,
+    api_url: Optional[str] = None, timeout_s: float = 60.0,
+    extra_query_params: Optional[Dict[str, Any]] = None, api_method: Optional[str] = None,
+) -> Dict[str, Optional[str]]:
+    """Send one JSON POST batch and return ``input string -> match``."""
+    del api_method
+    if not input_strings or any(not _valid_input(item) for item in input_strings):
+        raise ValueError("input_strings must contain at least one real, nonblank name")
+    if not list_of_strings:
+        raise ValueError("list_of_strings must contain at least one candidate")
+    inputs = [str(item) for item in input_strings]
+    candidates = [str(item) for item in list_of_strings]
+    payload: Dict[str, Any] = {"input_strings": inputs, "candidates": candidates}
     if prompt_path:
-        query["prompt_path"] = prompt_path
+        payload["prompt_path"] = prompt_path
     if extra_query_params:
-        query.update(extra_query_params)
-
-    if resolved_api_method == "POST":
-        status, text = _http_post_json(resolved_api_url, query, timeout_s=timeout_s)
-    else:
-        qs = urllib.parse.urlencode(query, doseq=True)
-        url = resolved_api_url + ("&" if "?" in resolved_api_url else "?") + qs
-        try:
-            status, text = _http_get(url, timeout_s=timeout_s)
-        except MatchAPIError as exc:
-            if exc.status == 431:
-                status, text = _http_post_json(resolved_api_url, query, timeout_s=timeout_s)
-            else:
-                raise
-
-    if status < 200 or status >= 300:
+        payload.update(extra_query_params)
+    status, text = _http_post_json(_resolved_api_url(api_url), payload, timeout_s)
+    if not 200 <= status < 300:
+        effective = 429 if _contains_upstream_429(text) else status
         raise MatchAPIError(
-            f"Match API returned status {status}: {text}",
-            status=status,
-            retryable=status in {408, 425, 429, 500, 502, 503, 504},
+            f"Match API returned status {status}: {text[:1000]}", status=effective,
+            retryable=effective in _RETRYABLE, retry_after_s=_retry_after_seconds(None, text),
         )
-
     try:
-        data = json.loads(text)
-        if isinstance(data, dict):
-            if "match" not in data:
-                raise KeyError("Missing 'match' in API response JSON.")
-            raw_result = "" if data["match"] is None else str(data["match"]).strip()
-        elif isinstance(data, str):
-            raw_result = data.strip()
-        else:
-            raise TypeError(f"Unexpected API response JSON type: {type(data).__name__}")
-    except (json.JSONDecodeError, TypeError, KeyError):
-        raw_result = (text or "").strip()
+        rows = json.loads(text)["results"]
+        if not isinstance(rows, list):
+            raise TypeError("results is not a list")
+    except (json.JSONDecodeError, KeyError, TypeError) as exc:
+        raise MatchAPIError(f"Invalid match API response: {text[:1000]!r}") from exc
+    requested, candidate_set = set(inputs), set(candidates)
+    output: Dict[str, Optional[str]] = {item: None for item in inputs}
+    for row in rows:
+        if not isinstance(row, dict) or "input_string" not in row or "match" not in row:
+            raise MatchAPIError(f"Invalid result in match API response: {text[:1000]!r}")
+        item = str(row["input_string"])
+        if item not in requested:
+            continue
+        match = row["match"]
+        if match is not None:
+            value = str(match).strip()
+            output[item] = value if value in candidate_set else None
+    return output
 
-    if raw_result == "" or raw_result.lower() in {"none", "null", "n/a", "na"}:
-        raw_result = "None"
-    return raw_result if raw_result in list_of_strings or raw_result == "None" else "None"
+
+def match_batch_via_api_single_attempt(batch: List[str], candidates: List[str], **kwargs: Any) -> Dict[str, Optional[str]]:
+    return match_batch_via_api(batch, candidates, **kwargs)
+
+
+def match_string_via_api(input_string: str, list_of_strings: List[str], **kwargs: Any) -> str:
+    result = match_batch_via_api([input_string], list_of_strings, **kwargs)[str(input_string)]
+    return "None" if result is None else result
 
 
 def _is_retryable(exception: BaseException) -> bool:
     return isinstance(exception, MatchAPIError) and exception.retryable
 
 
-def _wait_for_retry(retry_state: Any) -> float:
-    exception = retry_state.outcome.exception()
-    if isinstance(exception, MatchAPIError) and exception.retry_after_s is not None:
-        return exception.retry_after_s + random.uniform(0.0, 1.0)
-    # Random exponential backoff prevents all timed-out workers retrying together.
-    return float(wait_random_exponential(multiplier=2, min=2, max=30)(retry_state))
+def _wait_for_retry(state: Any) -> float:
+    exc = state.outcome.exception()
+    if isinstance(exc, MatchAPIError) and exc.retry_after_s is not None:
+        return exc.retry_after_s + random.uniform(0, 1)
+    return float(wait_random_exponential(multiplier=2, min=5, max=60)(state))
 
 
-def _log_before_retry(retry_state: Any) -> None:
-    item = retry_state.kwargs.get("input_string", "<unknown>")
-    exception = retry_state.outcome.exception()
-    sleep_for = retry_state.next_action.sleep
-    status = getattr(exception, "status", None)
+def _log_before_retry(state: Any) -> None:
+    batch = state.kwargs.get("input_strings", state.args[0] if state.args else [])
+    exc = state.outcome.exception()
     _diagnostic(
-        f"RETRY item={item!r} attempt={retry_state.attempt_number}/3 "
-        f"next_attempt_in={sleep_for:.1f}s status={status!r} "
-        f"error={type(exception).__name__}: {exception}"
+        f"RETRY batch_size={len(batch) if isinstance(batch, list) else '?'} "
+        f"attempt={state.attempt_number}/3 next_attempt_in={state.next_action.sleep:.1f}s "
+        f"status={getattr(exc, 'status', None)!r} error={exc}"
     )
 
 
-@retry(
-    stop=stop_after_attempt(3),
-    wait=_wait_for_retry,
-    retry=retry_if_exception(_is_retryable),
-    reraise=True,
-    before_sleep=_log_before_retry,
-)
+@retry(stop=stop_after_attempt(3), wait=_wait_for_retry, retry=retry_if_exception(_is_retryable),
+       reraise=True, before_sleep=_log_before_retry)
+def match_batch_with_retry(*args: Any, **kwargs: Any) -> Dict[str, Optional[str]]:
+    return match_batch_via_api(*args, **kwargs)
+
+
+@retry(stop=stop_after_attempt(3), wait=_wait_for_retry, retry=retry_if_exception(_is_retryable),
+       reraise=True, before_sleep=_log_before_retry)
 def match_string_with_retry(*args: Any, **kwargs: Any) -> str:
     return match_string_via_api(*args, **kwargs)
 
 
-def _progress_watchdog(
-    futures: Dict[Any, str], stop_event: threading.Event, started_at: float, interval_s: float
-) -> None:
-    previous_done = 0
-    stagnant_for = 0.0
-    while not stop_event.wait(interval_s):
-        done = sum(future.done() for future in futures)
-        pending = len(futures) - done
-        stagnant_for = stagnant_for + interval_s if done == previous_done else 0.0
-        previous_done = done
+def _progress_watchdog(futures: Dict[Any, List[str]], stop: threading.Event, started: float,
+                       interval: float, pass_number: int) -> None:
+    previous = 0
+    stagnant = 0.0
+    while not stop.wait(interval):
+        done = sum(f.done() for f in futures)
+        stagnant = stagnant + interval if done == previous else 0.0
+        previous = done
+        items = sum(len(futures[f]) for f in futures if f.done())
         _diagnostic(
-            f"HEARTBEAT completed={done}/{len(futures)} pending={pending} "
-            f"elapsed={time.monotonic() - started_at:.1f}s "
-            f"no_new_completion_for={stagnant_for:.1f}s. "
-            "If this repeats, requests are waiting on the API/network; they are not CPU-bound."
+            f"PASS {pass_number} HEARTBEAT active_completed_batches={done}/{len(futures)} "
+            f"active_completed_inputs={items} elapsed={time.monotonic()-started:.1f}s "
+            f"no_new_completion_for={stagnant:.1f}s"
         )
+
+
+def _run_batch_pass(
+    batches: List[List[str]], candidates: List[str], *, pass_number: int, max_workers: int,
+    request_delay_s: float, diagnostics: bool, diagnostic_interval_s: float,
+    started_at: float, call_kwargs: Dict[str, Any], progress: Any = None,
+) -> Tuple[Dict[str, Optional[str]], List[Tuple[List[str], Exception]]]:
+    """Run a pass with bounded submission so completions are consumed immediately.
+
+    The previous implementation submitted every batch first and slept between each
+    submission. With a low rate limit this meant tqdm could remain at zero for hours,
+    even while the API returned 200 responses. This scheduler keeps only
+    ``max_workers`` requests in flight and handles each result as soon as it finishes.
+    """
+    results: Dict[str, Optional[str]] = {}
+    failures: List[Tuple[List[str], Exception]] = []
+    if not batches:
+        return results, failures
+
+    workers = min(max_workers, len(batches))
+    next_batch = 0
+    next_submit_at = time.monotonic()
+    completed_batches = 0
+    last_completion = time.monotonic()
+    last_heartbeat = time.monotonic()
+
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        pending: Dict[Any, List[str]] = {}
+        while next_batch < len(batches) or pending:
+            now = time.monotonic()
+
+            # Keep a bounded number of requests in flight, while spacing request
+            # starts according to the configured input-per-minute limit.
+            if next_batch < len(batches) and len(pending) < workers and now >= next_submit_at:
+                batch = batches[next_batch]
+                future = executor.submit(
+                    match_batch_via_api_single_attempt,
+                    batch=batch,
+                    candidates=candidates,
+                    **call_kwargs,
+                )
+                pending[future] = batch
+                next_batch += 1
+                next_submit_at = now + request_delay_s
+                continue
+
+            timeout = max(0.0, next_submit_at - now) if next_batch < len(batches) and len(pending) < workers else None
+            if diagnostics:
+                heartbeat_due = max(0.0, diagnostic_interval_s - (now - last_heartbeat))
+                timeout = heartbeat_due if timeout is None else min(timeout, heartbeat_due)
+
+            done, _ = wait(tuple(pending), timeout=timeout, return_when=FIRST_COMPLETED) if pending else (set(), set())
+            if not done:
+                now = time.monotonic()
+                if diagnostics and now - last_heartbeat >= diagnostic_interval_s:
+                    _diagnostic(
+                        f"PASS {pass_number} HEARTBEAT completed_batches={completed_batches}/{len(batches)} "
+                        f"submitted_batches={next_batch}/{len(batches)} in_flight={len(pending)} "
+                        f"elapsed={now-started_at:.1f}s "
+                        f"no_new_completion_for={now-last_completion:.1f}s"
+                    )
+                    last_heartbeat = now
+                continue
+
+            for future in done:
+                batch = pending.pop(future)
+                completed_batches += 1
+                last_completion = time.monotonic()
+                try:
+                    values = future.result()
+                    results.update({item: values.get(item) for item in batch})
+                    if pass_number == 2:
+                        logger.info("[name-match] Pass 2 batch (%d items) RECOVERED.", len(batch))
+                except Exception as exc:
+                    failures.append((batch, exc))
+                    level = logger.warning if pass_number == 1 else logger.error
+                    level(
+                        "[name-match] Pass %d batch failed (%s).%s",
+                        pass_number,
+                        exc,
+                        f" Moving {len(batch)} items to Pass 2 queue." if pass_number == 1 else "",
+                    )
+                finally:
+                    # Pass 1 progress means "primary inputs attempted", regardless
+                    # of whether an item succeeded or entered the dead-letter queue.
+                    if progress is not None and pass_number == 1:
+                        progress.update(len(batch))
+                        progress.set_postfix(
+                            completed_batches=completed_batches,
+                            deferred_batches=len(failures),
+                            refresh=True,
+                        )
+
+    return results, failures
+
+
+def _print_summary_audit(total_inputs: int, total_batches: int, pass1: int, pass2: int,
+                         failures: List[Tuple[List[str], str]]) -> None:
+    print("\n" + "=" * 80)
+    print("                     BATCH MATCHING SUMMARY AUDIT")
+    print("=" * 80)
+    print(f" Total Items Processed   : {total_inputs}")
+    print(f" Total Batches Processed : {total_batches}")
+    print(f" Pass 1 Succeeded        : {pass1}")
+    print(f" Pass 2 Recovered        : {pass2}")
+    print(f" Permanently Failed      : {len(failures)}")
+    if failures:
+        print("-" * 80)
+        for idx, (items, reason) in enumerate(failures, 1):
+            print(f"\n--- Failed Batch #{idx} ({len(items)} items) ---\n Reason: {reason}\n Items:")
+            for item in items:
+                print(f"   - {item}")
+    else:
+        print("\n[SUCCESS] All batches processed successfully across Pass 1 & Pass 2!")
+    print("=" * 80 + "\n")
 
 
 def match_strings_via_api_concurrent(
-        input_strings: List[str],
-        list_of_strings: List[str],
-        prompt_path: Optional[str] = None,
-        api_url: Optional[str] = None,
-        timeout_s: float = 60.0,
-        max_workers: int = 4,
-        extra_query_params: Optional[Dict[str, str]] = None,
-        api_method: Optional[str] = None,
-        show_progress: bool = False,
-        progress_desc: str = "Matching names",
-        diagnostics: bool = True,
-        diagnostic_interval_s: float = 30.0,
-        request_delay_s: float = 0.1,  # Added: gentle throttling between submissions
-        raise_on_failure: bool = False,  # Added: control whether 1 error kills the batch
-) -> Dict[str, str]:
-    """Concurrently resolve names with visible diagnostics and bounded concurrency."""
-    if max_workers <= 0:
-        raise ValueError("max_workers must be > 0")
-    if diagnostic_interval_s <= 0:
-        raise ValueError("diagnostic_interval_s must be > 0")
+    input_strings: List[str], list_of_strings: List[str], prompt_path: Optional[str] = None,
+    api_url: Optional[str] = None, timeout_s: float = 60.0, max_workers: int = 4,
+    extra_query_params: Optional[Dict[str, Any]] = None, api_method: Optional[str] = None,
+    show_progress: bool = False, progress_desc: str = "Matching names", diagnostics: bool = True,
+    diagnostic_interval_s: float = 30.0, request_delay_s: float = 0.5,
+    raise_on_failure: bool = False, batch_size: Optional[int] = None,
+    cooldown_s: Optional[float] = None, max_inputs_per_minute: Optional[float] = None,
+) -> Dict[str, Optional[str]]:
+    """Process batch POSTs with pacing and a two-pass dead-letter queue.
 
-    unique_inputs = list(dict.fromkeys(input_strings))
-    if not unique_inputs:
+    ``max_inputs_per_minute`` is important because each item in an HTTP batch still
+    causes one LLM invocation on the server. It can also be set with
+    ``MATCH_STRING_MAX_INPUTS_PER_MINUTE``. Set it below the Azure deployment RPM
+    allowance (and account for TPM separately by using a conservative value).
+    """
+    del api_method
+    if max_workers <= 0 or diagnostic_interval_s <= 0:
+        raise ValueError("max_workers and diagnostic_interval_s must be > 0")
+    if batch_size is None:
+        batch_size = int(os.getenv("MATCH_STRING_BATCH_SIZE", "10"))
+    if cooldown_s is None:
+        cooldown_s = float(os.getenv("MATCH_STRING_COOLDOWN_SECONDS", "60"))
+    if max_inputs_per_minute is None:
+        raw_rate = os.getenv("MATCH_STRING_MAX_INPUTS_PER_MINUTE", "0")
+        max_inputs_per_minute = float(raw_rate)
+    if batch_size <= 0 or cooldown_s < 0 or max_inputs_per_minute < 0:
+        raise ValueError("batch_size must be > 0; cooldown/rate must be >= 0")
+
+    unique = list(dict.fromkeys(str(x) for x in input_strings if _valid_input(x)))
+    if not unique:
         return {}
-
+    batches = [unique[i:i + batch_size] for i in range(0, len(unique), batch_size)]
+    if max_inputs_per_minute:
+        request_delay_s = max(request_delay_s, 60.0 * batch_size / max_inputs_per_minute)
+    workers = min(max_workers, len(batches))
+    started = time.monotonic()
     if diagnostics:
         _diagnostic(
-            f"START requests={len(unique_inputs)} workers={min(max_workers, len(unique_inputs))} "
-            f"request_timeout={timeout_s}s attempts=3 method="
-            f"{(api_method or os.getenv('MATCH_STRING_API_METHOD', 'GET')).upper()}"
+            f"START total_inputs={len(unique)} batches={len(batches)} batch_size={batch_size} "
+            f"workers={workers} request_timeout={timeout_s}s method=POST passes=2 "
+            f"batch_interval={request_delay_s:.2f}s input_rate_limit={max_inputs_per_minute or 'off'}/min"
         )
+    progress = tqdm(total=len(unique), desc=progress_desc, unit="name", file=sys.stderr) if show_progress and tqdm else None
+    kwargs = dict(prompt_path=prompt_path, api_url=api_url, timeout_s=timeout_s,
+                  extra_query_params=extra_query_params)
+    try:
+        results, failed1 = _run_batch_pass(
+            batches, list_of_strings, pass_number=1, max_workers=max_workers,
+            request_delay_s=request_delay_s, diagnostics=diagnostics,
+            diagnostic_interval_s=diagnostic_interval_s, started_at=started,
+            call_kwargs=kwargs, progress=progress)
+        pass1 = len(batches) - len(failed1)
+        logger.info("[name-match] PASS 1 COMPLETE: %d/%d succeeded.", pass1, len(batches))
 
-    results: Dict[str, str] = {}
-    worker_count = min(max_workers, len(unique_inputs))
-    started_at = time.monotonic()
-    stop_event = threading.Event()
-    watchdog: Optional[threading.Thread] = None
+        final: List[Tuple[List[str], str]] = []
+        pass2 = 0
+        if failed1:
+            queued = [batch for batch, _ in failed1]
+            if progress is not None:
+                progress.set_postfix(stage="cooldown", deferred_batches=len(queued), refresh=True)
+            logger.info("[name-match] COOLDOWN: %d batches; sleeping %.1fs.", len(queued), cooldown_s)
+            time.sleep(cooldown_s)
+            recovered, failed2 = _run_batch_pass(
+                queued, list_of_strings, pass_number=2, max_workers=max_workers,
+                request_delay_s=request_delay_s, diagnostics=diagnostics,
+                diagnostic_interval_s=diagnostic_interval_s, started_at=started, call_kwargs=kwargs)
+            results.update(recovered)
+            pass2 = len(queued) - len(failed2)
+            for batch, exc in failed2:
+                results.update({item: None for item in batch})
+                final.append((batch, str(exc)))
+    finally:
+        if progress:
+            progress.close()
 
-    with ThreadPoolExecutor(max_workers=worker_count) as executor:
-        # Submit tasks with a slight pause to avoid overwhelming Azure's gateway
-        futures = {}
-        for item in unique_inputs:
-            future = executor.submit(
-                match_string_with_retry,
-                input_string=item,
-                list_of_strings=list_of_strings,
-                prompt_path=prompt_path,
-                api_url=api_url,
-                timeout_s=timeout_s,
-                extra_query_params=extra_query_params,
-                api_method=api_method,
-            )
-            futures[future] = item
-            if request_delay_s > 0:
-                time.sleep(request_delay_s)
-
-        supports_watchdog = futures and hasattr(next(iter(futures)), "done")
-        if diagnostics and supports_watchdog:
-            watchdog = threading.Thread(
-                target=_progress_watchdog,
-                args=(futures, stop_event, started_at, diagnostic_interval_s),
-                daemon=True,
-                name="name-match-watchdog",
-            )
-            watchdog.start()
-
-        completed_futures: Any = as_completed(futures)
-        if show_progress and tqdm is not None:
-            completed_futures = tqdm(completed_futures, total=len(futures), desc=progress_desc, unit="name")
-
-        try:
-            for future in completed_futures:
-                key = futures[future]
-                try:
-                    results[key] = future.result()
-                except Exception as exc:
-                    pending = len(futures) - len(results) - 1
-                    _diagnostic(
-                        f"FAILED item={key!r} completed={len(results)}/{len(futures)} "
-                        f"pending={pending} elapsed={time.monotonic() - started_at:.1f}s "
-                        f"error={type(exc).__name__}: {exc}"
-                    )
-
-                    if raise_on_failure:
-                        for other_future in futures:
-                            if other_future is not future:
-                                other_future.cancel()
-                        raise RuntimeError(
-                            f"Name matching failed for {key!r}; completed "
-                            f"{len(results)}/{len(futures)} requests: {exc}"
-                        ) from exc
-                    else:
-                        # Default behavior: record None/empty string for failed item so job completes
-                        results[key] = None
-        finally:
-            stop_event.set()
-            if watchdog is not None:
-                watchdog.join(timeout=1.0)
-
+    ordered = {item: results.get(item) for item in unique}
+    _print_summary_audit(len(unique), len(batches), pass1, pass2, final)
     if diagnostics:
         _diagnostic(
-            f"COMPLETE completed={len(results)}/{len(futures)} "
-            f"elapsed={time.monotonic() - started_at:.1f}s"
+            f"COMPLETE completed_inputs={len(ordered)}/{len(unique)} pass1_succeeded={pass1} "
+            f"pass2_recovered={pass2} permanently_failed_batches={len(final)} "
+            f"elapsed={time.monotonic()-started:.1f}s"
         )
-    return results
+    if final and raise_on_failure:
+        raise RuntimeError(f"Name matching permanently failed for {sum(len(x) for x, _ in final)} inputs")
+    return ordered

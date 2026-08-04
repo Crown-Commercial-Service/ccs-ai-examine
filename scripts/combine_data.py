@@ -106,7 +106,7 @@ def combine_data(contracts_data, mi_data, regno_key_pairs):
         name_map = match_strings_via_api_concurrent(
             input_strings=unique_unmatched_customers,
             list_of_strings=buyer_names_from_contracts,
-            prompt_path="./prompts/buyer_match_v2.txt",
+            prompt_path=os.getenv("PROMPT_PATH"),
             api_url=os.getenv("NAME_MATCH_API_ENDPOINT"),
             timeout_s=timeout_s,
             max_workers=workers,
