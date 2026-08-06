@@ -23,8 +23,10 @@ stages:
     params:
       - data_mode
     outs:
-      - data/${data_mode}/combined.csv
-      - data/${data_mode}/unmatched.csv
+      - data/${data_mode}/combined.csv:
+         persist: true
+      - data/${data_mode}/unmatched.csv:
+          persist: true
 
   summarise:
     cmd: python scripts/summarise_data.py --indir data/${data_mode} --outdir data/${data_mode}

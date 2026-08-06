@@ -48,24 +48,24 @@ stages:
       size: 47
     - path: scripts/combine_data.py
       hash: md5
-      md5: 52aadadc5d13f7f35a27775bd0d78ff4
-      size: 5916
+      md5: 8a1c80809af1ea0f941cc1201d52924c
+      size: 10486
     - path: utils.py
       hash: md5
-      md5: 3266d461f89d2e2871019ea4806d6a0b
-      size: 16890
+      md5: f3af9d49dcb09c72bd9685a637c48107
+      size: 18293
     params:
       params.yaml:
         data_mode: live
     outs:
     - path: data/live/combined.csv
       hash: md5
-      md5: b8aa30f1626365a7efe969b8b908bf0f
-      size: 2047543552
+      md5: 08a81c7b26b133cd2ecb69f6f5494893
+      size: 1035819673
     - path: data/live/unmatched.csv
       hash: md5
-      md5: a4be88dc958981c98c8155795d1679b0
-      size: 101429437
+      md5: a282100f6136b3ae702f77db539d5b19
+      size: 110840277
   summarise:
     cmd: python scripts/summarise_data.py --indir data/live --outdir data/live
     deps:

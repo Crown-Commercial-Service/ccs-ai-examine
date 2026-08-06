@@ -9,12 +9,11 @@ import random
 import re
 import socket
 import sys
-import threading
 import time
 import urllib.error
 import urllib.request
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, MutableSet, Optional, Tuple
 
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_random_exponential
 
@@ -143,17 +142,30 @@ def match_batch_via_api(
     except (json.JSONDecodeError, KeyError, TypeError) as exc:
         raise MatchAPIError(f"Invalid match API response: {text[:1000]!r}") from exc
     requested, candidate_set = set(inputs), set(candidates)
-    output: Dict[str, Optional[str]] = {item: None for item in inputs}
+    output: Dict[str, Optional[str]] = {}
     for row in rows:
         if not isinstance(row, dict) or "input_string" not in row or "match" not in row:
             raise MatchAPIError(f"Invalid result in match API response: {text[:1000]!r}")
         item = str(row["input_string"])
         if item not in requested:
             continue
+        if item in output:
+            raise MatchAPIError(f"Duplicate result for {item!r} in match API response")
         match = row["match"]
-        if match is not None:
+        if match is None:
+            output[item] = None
+        else:
             value = str(match).strip()
             output[item] = value if value in candidate_set else None
+    missing = requested.difference(output)
+    if missing:
+        # A missing row is not a valid LLM no-match. Fail the batch so these names
+        # enter the dead-letter queue and remain retryable on a subsequent run.
+        raise MatchAPIError(
+            f"Match API response omitted {len(missing)} requested item(s): "
+            f"{sorted(missing)[:10]!r}",
+            retryable=True,
+        )
     return output
 
 
@@ -199,34 +211,12 @@ def match_string_with_retry(*args: Any, **kwargs: Any) -> str:
     return match_string_via_api(*args, **kwargs)
 
 
-def _progress_watchdog(futures: Dict[Any, List[str]], stop: threading.Event, started: float,
-                       interval: float, pass_number: int) -> None:
-    previous = 0
-    stagnant = 0.0
-    while not stop.wait(interval):
-        done = sum(f.done() for f in futures)
-        stagnant = stagnant + interval if done == previous else 0.0
-        previous = done
-        items = sum(len(futures[f]) for f in futures if f.done())
-        _diagnostic(
-            f"PASS {pass_number} HEARTBEAT active_completed_batches={done}/{len(futures)} "
-            f"active_completed_inputs={items} elapsed={time.monotonic()-started:.1f}s "
-            f"no_new_completion_for={stagnant:.1f}s"
-        )
-
-
 def _run_batch_pass(
     batches: List[List[str]], candidates: List[str], *, pass_number: int, max_workers: int,
     request_delay_s: float, diagnostics: bool, diagnostic_interval_s: float,
     started_at: float, call_kwargs: Dict[str, Any], progress: Any = None,
 ) -> Tuple[Dict[str, Optional[str]], List[Tuple[List[str], Exception]]]:
-    """Run a pass with bounded submission so completions are consumed immediately.
-
-    The previous implementation submitted every batch first and slept between each
-    submission. With a low rate limit this meant tqdm could remain at zero for hours,
-    even while the API returned 200 responses. This scheduler keeps only
-    ``max_workers`` requests in flight and handles each result as soon as it finishes.
-    """
+    """Run a pass with bounded submission and consume completions immediately."""
     results: Dict[str, Optional[str]] = {}
     failures: List[Tuple[List[str], Exception]] = []
     if not batches:
@@ -243,9 +233,6 @@ def _run_batch_pass(
         pending: Dict[Any, List[str]] = {}
         while next_batch < len(batches) or pending:
             now = time.monotonic()
-
-            # Keep a bounded number of requests in flight, while spacing request
-            # starts according to the configured input-per-minute limit.
             if next_batch < len(batches) and len(pending) < workers and now >= next_submit_at:
                 batch = batches[next_batch]
                 future = executor.submit(
@@ -283,7 +270,7 @@ def _run_batch_pass(
                 last_completion = time.monotonic()
                 try:
                     values = future.result()
-                    results.update({item: values.get(item) for item in batch})
+                    results.update({item: values[item] for item in batch})
                     if pass_number == 2:
                         logger.info("[name-match] Pass 2 batch (%d items) RECOVERED.", len(batch))
                 except Exception as exc:
@@ -296,8 +283,6 @@ def _run_batch_pass(
                         f" Moving {len(batch)} items to Pass 2 queue." if pass_number == 1 else "",
                     )
                 finally:
-                    # Pass 1 progress means "primary inputs attempted", regardless
-                    # of whether an item succeeded or entered the dead-letter queue.
                     if progress is not None and pass_number == 1:
                         progress.update(len(batch))
                         progress.set_postfix(
@@ -338,13 +323,12 @@ def match_strings_via_api_concurrent(
     diagnostic_interval_s: float = 30.0, request_delay_s: float = 0.5,
     raise_on_failure: bool = False, batch_size: Optional[int] = None,
     cooldown_s: Optional[float] = None, max_inputs_per_minute: Optional[float] = None,
+    failed_items: Optional[MutableSet[str]] = None,
 ) -> Dict[str, Optional[str]]:
     """Process batch POSTs with pacing and a two-pass dead-letter queue.
 
-    ``max_inputs_per_minute`` is important because each item in an HTTP batch still
-    causes one LLM invocation on the server. It can also be set with
-    ``MATCH_STRING_MAX_INPUTS_PER_MINUTE``. Set it below the Azure deployment RPM
-    allowance (and account for TPM separately by using a conservative value).
+    If ``failed_items`` is supplied, it is populated only with names whose batch
+    failed both passes. A returned ``None`` not in that set is a valid LLM no-match.
     """
     del api_method
     if max_workers <= 0 or diagnostic_interval_s <= 0:
@@ -376,6 +360,9 @@ def match_strings_via_api_concurrent(
     progress = tqdm(total=len(unique), desc=progress_desc, unit="name", file=sys.stderr) if show_progress and tqdm else None
     kwargs = dict(prompt_path=prompt_path, api_url=api_url, timeout_s=timeout_s,
                   extra_query_params=extra_query_params)
+    final: List[Tuple[List[str], str]] = []
+    pass1 = 0
+    pass2 = 0
     try:
         results, failed1 = _run_batch_pass(
             batches, list_of_strings, pass_number=1, max_workers=max_workers,
@@ -385,8 +372,6 @@ def match_strings_via_api_concurrent(
         pass1 = len(batches) - len(failed1)
         logger.info("[name-match] PASS 1 COMPLETE: %d/%d succeeded.", pass1, len(batches))
 
-        final: List[Tuple[List[str], str]] = []
-        pass2 = 0
         if failed1:
             queued = [batch for batch, _ in failed1]
             if progress is not None:
@@ -405,6 +390,9 @@ def match_strings_via_api_concurrent(
     finally:
         if progress:
             progress.close()
+
+    if failed_items is not None:
+        failed_items.update(item for batch, _ in final for item in batch)
 
     ordered = {item: results.get(item) for item in unique}
     _print_summary_audit(len(unique), len(batches), pass1, pass2, final)
